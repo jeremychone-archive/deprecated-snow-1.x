@@ -1,0 +1,11 @@
+<db>
+
+  <table name="employee">
+     <column name="id"         type="bigint"  pk="true" unsigned="true" autoIncr="true"/>
+     <column name="username"   type="varchar" length="64" />
+	 <column name="firstName"  type="varchar" length="64" />
+	 <column name="lastName"   type="varchar" length="64" />
+	 <column name="isMasterUser"   type="tinyint" length="1" />
+  </table>
+  
+</db>

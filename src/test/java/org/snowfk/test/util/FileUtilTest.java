@@ -1,0 +1,29 @@
+package org.snowfk.test.util;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+import org.snowfk.util.FileUtil;
+
+public class FileUtilTest {
+
+    @Test
+    public void testSplitIdFolder2() {
+        String[][] testValues = { { "/firms/[1]", "/firms/01" }, { "/firms/[10]", "/firms/10" },
+                { "/firms/[101]", "/firms/01/01" }, { "/firms/[10101]", "/firms/01/01/01" }, { "[110]/photo", "01/10_dir/photo" } };
+
+        //make the "/" the same as the file.separatorChar
+        /*
+        for (String[] inAndOut : testValues) {
+            inAndOut[0] = inAndOut[0].replace('/', File.separatorChar);
+            inAndOut[1] = inAndOut[1].replace('/', File.separatorChar);
+        }
+        */
+
+
+        //perform the test
+        for (String[] inAndOut : testValues) {
+            assertEquals("Test for '" + inAndOut[0] + "'", inAndOut[1], FileUtil.splitIdFolder2(inAndOut[0],'/'));
+        }
+    }
+}
