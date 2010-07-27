@@ -7,7 +7,6 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.snowfk.util.MapUtil;
 

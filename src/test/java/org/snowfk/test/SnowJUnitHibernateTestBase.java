@@ -1,14 +1,11 @@
 package org.snowfk.test;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.snowfk.web.WebApplication;
 import org.snowfk.web.WebApplicationLoader;
 import org.snowfk.web.WebModule;
