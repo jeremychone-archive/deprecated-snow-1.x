@@ -184,6 +184,28 @@ public class WebApplicationLoader {
         webApplication = appInjector.getInstance(WebApplication.class);
         /*--------- /Load WebApplication ---------*/
 
+        // --------- Load ApplicationModule if defined --------- //
+        String applicationConfigClassStr = appProperties.getProperty("snow.applicationWebModuleConfigClass");
+        String applicationWebModuleName = appProperties.getProperty("snow.applicationWebModuleName");
+        if (applicationConfigClassStr != null && applicationWebModuleName != null){
+            Class webModuleConfigClass = Class.forName(applicationConfigClassStr);
+            WebModuleConfig webAppModuleConfig = (WebModuleConfig) webModuleConfigClass.newInstance();
+            
+            //Remvoe this otherwise get a binding error?? 
+            //TODO: need to look into this.
+            //webAppModuleConfig.setProperties(appProperties);
+            
+            WebModule webModule = createAndRegisterWebModule(webAppModuleConfig,applicationWebModuleName);
+            
+            //set the root webapp folder as the view folder
+            webModule.setViewFolder(getWebAppFolder());
+            //set the /WEB-INF/snow/conf as the conf folder
+            webModule.setConfigFolder(new File(sfkFolder,"/WEB-INF/snow/conf"));
+            
+            webApplication.setSnowDefaultModuleName(applicationWebModuleName);
+        }
+        // --------- Load ApplicationModule if defined  --------- //
+        
         /*--------- Load the WebModules ---------*/
 
         List<File> moduleFolders = getModuleFolders(sfkFolder);
@@ -206,21 +228,11 @@ public class WebApplicationLoader {
                 webModuleConfig = new WebModuleConfig();
             }
 
-            //probably need to add some security, such as only authorized module get WebApplication
-            webModuleConfig.setWebApplication(webApplication);
-
-            //// get the injector and the webModule
-            Injector moduleInjector = appInjector.createChildInjector(webModuleConfig);
-            WebModule webModule = moduleInjector.getInstance(WebModule.class);
-
-            //// set the webModule name
-            webModule.setName(webModuleFolder.getName());
-
+            WebModule webModule = createAndRegisterWebModule(webModuleConfig,webModuleFolder.getName());
+            
             //// set the webModule folder
             webModule.setFolder(webModuleFolder);
 
-            //// add the webModule to the application
-            webApplication.addWebModule(webModule);
 
         }
         /*--------- /Load the WebModules ---------*/
@@ -228,6 +240,23 @@ public class WebApplicationLoader {
     }
 
     /*--------- Privates ---------*/
+    private WebModule createAndRegisterWebModule(WebModuleConfig webModuleConfig,String moduleName){
+        //probably need to add some security, such as only authorized module get WebApplication
+        webModuleConfig.setWebApplication(webApplication);   
+        
+        //// get the injector and the webModule
+        Injector moduleInjector = appInjector.createChildInjector(webModuleConfig);
+        WebModule webModule = moduleInjector.getInstance(WebModule.class);
+
+        //// set the webModule name
+        webModule.setName(moduleName);
+
+        //// add the webModule to the application
+        webApplication.addWebModule(webModule);  
+        return webModule;
+    }
+    
+    
     private List<File> getModuleFolders(File sfkFolder) {
         List<File> moduleFolders = new ArrayList<File>();
         File modsFolder = new File(sfkFolder, "mods");

@@ -25,6 +25,7 @@ import org.snowfk.web.names.EntityClasses;
 import org.snowfk.web.names.LeafPaths;
 import org.snowfk.web.names.WebHandlers;
 import org.snowfk.web.part.CustomFramePriPath;
+import org.snowfk.web.part.Part;
 import org.snowfk.web.renderer.freemarker.TemplateDirectiveProxy;
 
 import com.google.inject.Inject;
@@ -37,6 +38,8 @@ public class WebModule {
     private String                       name;
     private List<Object>                 webBeans;
     private File                         folder;
+    private File                         viewFolder;
+    private File                         configFolder;
 
     //// Injected from WebModuleConfig 
     private Class[]                      entityClasses;
@@ -120,9 +123,14 @@ public class WebModule {
         return templateDirectiveProxyList;
     }
 
-    public File getFolder() {
-        return folder;
+    // --------- Folders --------- //
+    public File getViewFolder(){
+        return viewFolder;
     }
+    public File getConfigFolder(){
+        return configFolder;
+    }
+    // --------- /Folders --------- //    
 
     public String getPathWoExtFromPriWoExt(String priWoExt) {
         if (leafPaths == null || leafPaths.length < 1) {
@@ -245,8 +253,25 @@ public class WebModule {
     //Usually set by WebApplicationLoader.load()
     void setFolder(File folder) {
         this.folder = folder;
+        //set the view folder
+        viewFolder = new File(folder, Part.Type.t.prefix());
+        //set the config folder
+        configFolder = new File(folder,Part.Type.config.prefix());
     }
 
+    //Set by the WebApplicationLoader.load(). 
+    // Should be called when the Module is an application, and the path is directly in the webapp
+    // If this is called, setFolder should not    
+    void setViewFolder(File viewFolder){
+        this.viewFolder = viewFolder;
+    }
+    
+    //Set by the WebApplicationLoader.load().    
+    // Should be called when the Module is an application, and the path is directly in the webapp   
+    // If this is called, setFolder should not
+    void setConfigFolder(File configFolder){
+        this.configFolder = configFolder;
+    }
     /*--------- /Set by WebApplicationLoader.load() ---------*/
 
     /*--------- /Dependency Methods ---------*/

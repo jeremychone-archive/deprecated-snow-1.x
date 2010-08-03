@@ -59,11 +59,13 @@ public class WebApplication {
                                                    };
 
     @Inject
-    public WebApplication(@Named("snow.defaultWebModuleName") String defaultModuleName,
-                          @Nullable HibernateHandler hibernateHandler) {
-        this.defaultModuleName = defaultModuleName;
+    public WebApplication(@Nullable HibernateHandler hibernateHandler) {        
         this.hibernateHandler = hibernateHandler;
-
+    }
+    
+    @Inject(optional = true)
+    public void setSnowDefaultModuleName(@Nullable @Named("snow.defaultWebModuleName") String defaultModuleName){
+        this.defaultModuleName = defaultModuleName;
     }
 
     @Inject
@@ -195,18 +197,18 @@ public class WebApplication {
 
         /*--------- Compute the folder and filePath ---------*/
         //base folder for the part
-        File baseFolder = null;
+        
         File partBaseFolder = null;
         switch (partType) {
+            
             case t:
-                baseFolder = webModule.getFolder();
-                partBaseFolder = new File(baseFolder, partType.prefix());
+                partBaseFolder = webModule.getViewFolder();
                 break;
             case c:
+                
                 File contentFolder = getContentFolder();
                 if (contentFolder != null) {
-                    baseFolder = contentFolder;
-                    partBaseFolder = new File(baseFolder, partType.prefix() + File.separatorChar + webModule.getName());
+                    partBaseFolder = new File(contentFolder, partType.prefix() + File.separatorChar + webModule.getName());
                 } else {
                     throw new RuntimeException(
                                             "Cannot support content part, contentFolderPath not defined (please defined it in the application.properties): "
@@ -214,8 +216,7 @@ public class WebApplication {
                 }
                 break;
             case config:
-                baseFolder = webModule.getFolder();
-                partBaseFolder = new File(baseFolder, partType.prefix());
+                partBaseFolder = webModule.getConfigFolder();
                 break;
         }
 
