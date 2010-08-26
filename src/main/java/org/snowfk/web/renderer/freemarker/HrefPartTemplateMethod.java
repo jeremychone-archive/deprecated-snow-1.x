@@ -6,7 +6,7 @@ package org.snowfk.web.renderer.freemarker;
 
 import java.util.List;
 
-import org.snowfk.web.WebApplication;
+import org.snowfk.web.*;
 import org.snowfk.web.names.ServletContextPath;
 import org.snowfk.web.part.Part;
 import org.snowfk.web.part.HttpPriResolver;
@@ -24,13 +24,13 @@ public class HrefPartTemplateMethod implements TemplateMethodModelEx {
 
     WebApplication webApplication;
     String contextPath;
+
     @Inject
-    public HrefPartTemplateMethod(WebApplication webApplication,@Nullable @ServletContextPath String contextPath){
+    public HrefPartTemplateMethod(WebApplication webApplication,@Nullable @ServletContextPath ContextPathFinder contextPathFinder){
         this.webApplication = webApplication;
-        this.contextPath = contextPath;
+        this.contextPath = contextPathFinder.getContextPath();
     }
 
-    
     
     @Override
     public Object exec(List args) throws TemplateModelException {

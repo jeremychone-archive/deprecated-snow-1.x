@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.Properties;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.*;
 
 import org.snowfk.util.MapUtil;
 import org.snowfk.web.db.hibernate.HibernateHandler;
@@ -59,12 +60,8 @@ public class WebApplicationConfig extends AbstractModule {
     @ServletContextPath
     @Provides
     @Inject
-    public String providesContextPath(@Nullable ServletContext servletContext){
-        if (servletContext != null){
-            return servletContext.getContextPath();
-        }else{
-            return null;
-        }
+    public ContextPathFinder providesContextPathFinder(WebController webController){
+        return new ServletRequestContextPathFinder(webController);
     }
     
     @Provides

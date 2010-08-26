@@ -188,7 +188,7 @@ public class WebController {
             } else {
 
                 //// if the content is cache (could be the result of a [@links...) then just include the content
-                String contextPath = servletContext.getContextPath();
+                String contextPath = request.getContextPath();
                 String href = new StringBuilder(contextPath).append(pathInfo).toString();
                 String content = partCacheManager.getContentForHref(href);
 
