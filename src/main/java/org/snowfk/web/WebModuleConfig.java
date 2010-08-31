@@ -82,8 +82,8 @@ public class WebModuleConfig extends AbstractModule {
     @Provides
     @Inject
     @Singleton
-    public HibernateDaoHelper provideHibernateDaoHelper(HibernateDaoHelperImpl impl){
-        return impl;
+    public HibernateDaoHelper provideHibernateDaoHelper(Injector injector){
+        return injector.getInstance(HibernateDaoHelperImpl.class);
     }
 
     /*--------- Set by WebApplicationLoader ---------*/
