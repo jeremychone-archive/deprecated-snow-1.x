@@ -26,9 +26,9 @@ public class HrefPartTemplateMethod implements TemplateMethodModelEx {
     String contextPath;
 
     @Inject
-    public HrefPartTemplateMethod(WebApplication webApplication,@Nullable @ServletContextPath ContextPathFinder contextPathFinder){
+    public HrefPartTemplateMethod(WebApplication webApplication,@Nullable @ServletContextPath String contextPath){
         this.webApplication = webApplication;
-        this.contextPath = contextPathFinder.getContextPath();
+        this.contextPath = contextPath;
     }
 
     
