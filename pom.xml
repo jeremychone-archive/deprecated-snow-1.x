@@ -90,6 +90,12 @@
       <artifactId>commons-beanutils</artifactId>
       <version>1.8.0</version>
     </dependency>
+	
+	<dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>1.4</version>
+    </dependency>
     
     <dependency>
       <groupId>net.sf.json-lib</groupId>

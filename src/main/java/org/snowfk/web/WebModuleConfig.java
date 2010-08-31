@@ -18,6 +18,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.internal.Nullable;
 import com.google.inject.name.Names;
 
 public class WebModuleConfig extends AbstractModule {
@@ -55,7 +56,7 @@ public class WebModuleConfig extends AbstractModule {
     @Singleton
     @WebHandlerClasses
     public Class[] provideWebHandlerClasses() {
-        return new Class[0];
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -63,15 +64,19 @@ public class WebModuleConfig extends AbstractModule {
     @Singleton
     @WebHandlers
     @Inject
-    public List<Object> provideWebHandlers(@WebHandlerClasses Class[] webBeanClasses, Injector injector) {
-        List<Object> webBeans = new ArrayList<Object>();
+    public List<Object> provideWebHandlers(@Nullable @WebHandlerClasses Class[] webBeanClasses, Injector injector) {
+        
         if (webBeanClasses != null) {
+        	List<Object> webBeans = new ArrayList<Object>();
             for (Class webBeanClass : webBeanClasses) {
                 Object webBean = injector.getInstance(webBeanClass);
                 webBeans.add(webBean);
             }
+            return webBeans;
+        }else{
+        	return null;
         }
-        return webBeans;
+        
     }
 
     @Provides
