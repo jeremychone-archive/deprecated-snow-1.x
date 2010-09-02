@@ -68,6 +68,9 @@ public class WebModule {
 
 	// injection (optional)
 	private RequestLifeCycle requestLifeCycle;
+	
+	// injection (optional)
+	private WebHandlerMethodInterceptor webHandlerMethodInterceptor;
 
 	// injection (optional)
 	private HibernateDaoHelper hibernateDaoHelper;
@@ -218,6 +221,15 @@ public class WebModule {
 	@Inject(optional = true)
 	public void setRequestLifeCyle(RequestLifeCycle rlc) {
 		requestLifeCycle = rlc;
+	}
+	
+	public WebHandlerMethodInterceptor getWebHandlerMethodInterceptor(){
+		return webHandlerMethodInterceptor;
+	}
+	
+	@Inject(optional = true)
+	public void setWebHandlerMethodInterceptor(WebHandlerMethodInterceptor webHandlerMethodInterceptor){
+		this.webHandlerMethodInterceptor = webHandlerMethodInterceptor;
 	}
 
 	public AuthService getAuthService() {

@@ -79,6 +79,11 @@ public class WebMethodRef {
         return null;
     }
     
+    //for the WebHandlerMethodInterceptor
+    public Method getMethod(){
+    	return method;
+    }
+    
     /*--------- Invocation Methods ---------*/
     
 
