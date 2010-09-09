@@ -7,13 +7,11 @@ package org.snowfk.web.renderer.freemarker;
 import java.util.List;
 
 import org.snowfk.web.*;
-import org.snowfk.web.names.ServletContextPath;
 import org.snowfk.web.part.Part;
 import org.snowfk.web.part.HttpPriResolver;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.internal.Nullable;
 
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
@@ -23,12 +21,12 @@ import static org.snowfk.web.renderer.freemarker.FreemarkerUtil.getParam;
 public class HrefPartTemplateMethod implements TemplateMethodModelEx {
 
     WebApplication webApplication;
-    String contextPath;
+    CurrentRequestContextHolder currentRCHolder;
 
     @Inject
-    public HrefPartTemplateMethod(WebApplication webApplication,@Nullable @ServletContextPath String contextPath){
+    public HrefPartTemplateMethod(WebApplication webApplication,CurrentRequestContextHolder currentRCHolder){
         this.webApplication = webApplication;
-        this.contextPath = contextPath;
+        this.currentRCHolder = currentRCHolder;
     }
 
     
@@ -37,6 +35,7 @@ public class HrefPartTemplateMethod implements TemplateMethodModelEx {
 
         String pri = getParam(args.get(0),String.class);
         
+        String contextPath = currentRCHolder.getCurrentRequestContext().getContextPath();
         Part part = webApplication.getPart(pri);
         
         String hrefPart =  HttpPriResolver.getHrefForPart(part);

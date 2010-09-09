@@ -664,6 +664,13 @@ public class RequestContext {
         return servletContext;
     }
 
+    public String getContextPath(){
+    	HttpServletRequest request = getReq();
+		if (request != null) {
+			return request.getContextPath();
+		}
+		return null;
+    }
     public String getPathInfo() {
         if (pathInfo == null) {
             if (req != null) {
