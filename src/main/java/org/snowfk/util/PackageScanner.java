@@ -34,12 +34,11 @@ public abstract class PackageScanner<T> {
     {
         Set<T> set = new HashSet<T>();
 
-        packageName = packageName.replace('.', File.separatorChar);
+        packageName = packageName.replace('.', '/');
         Enumeration<URL> dirs = classLoader.getResources(packageName);
 
         T result;
         while (dirs.hasMoreElements()) {
-
             String path = URLDecoder.decode(dirs.nextElement().getPath(), "UTF-8");
 
             if (path.contains(".jar!")) {
