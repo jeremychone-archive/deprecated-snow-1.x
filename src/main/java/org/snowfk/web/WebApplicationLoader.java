@@ -196,6 +196,22 @@ public class WebApplicationLoader {
 
 		}
 
+		String propertyPostProcessorClassName = appProperties.getProperty("snow.propertyPostProcessorClass");
+		if (propertyPostProcessorClassName != null) {
+			try {
+				Class<PropertyPostProcessor> propertyPostProcessorClass = (Class<PropertyPostProcessor>) Class
+						.forName(propertyPostProcessorClassName);
+				
+				if (propertyPostProcessorClass != null) {
+					PropertyPostProcessor propertyPostProcessor = propertyPostProcessorClass.newInstance();
+					appProperties = propertyPostProcessor.processProperties(appProperties);
+				}
+			} catch (Exception e) {
+				logger.error("Cannot load or process the PropertyPostProcess class: " + propertyPostProcessorClassName
+						+ "\nException: " + e.getMessage());
+			}
+		}
+
 		/*--------- /Load the Properties ---------*/
 
 		/*--------- Load WebApplication ---------*/
