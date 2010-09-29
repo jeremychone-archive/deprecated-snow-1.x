@@ -34,8 +34,12 @@ public abstract class PackageScanner<T> {
     {
         Set<T> set = new HashSet<T>();
 
-        packageName = packageName.replace('.', '/');
-        Enumeration<URL> dirs = classLoader.getResources(packageName);
+        packageName = packageName.replace('.', File.separatorChar);
+        
+        // on windows, the jar file path use '/' not '\'(File.separatorChar on window)
+        String packageNameForJarPath = packageName.replace(File.separatorChar, '/');
+        
+        Enumeration<URL> dirs = classLoader.getResources(packageNameForJarPath);
 
         T result;
         while (dirs.hasMoreElements()) {
@@ -51,8 +55,8 @@ public abstract class PackageScanner<T> {
                 while (entries.hasMoreElements()) {
                     JarEntry entry = entries.nextElement();
 
-                    String entryPackage = StringUtils.substringBeforeLast(entry.getName(), File.separator);
-                    if(packageName.equals(entryPackage) || (recursive && entryPackage.startsWith(packageName))) {
+                    String entryPackage = StringUtils.substringBeforeLast(entry.getName(), "/");
+                    if(packageNameForJarPath.equals(entryPackage) || (recursive && entryPackage.startsWith(packageNameForJarPath))) {
                         if((result = getItemIfAcceptable(entry, set)) != null) {
                             set.add(result);
                         }
