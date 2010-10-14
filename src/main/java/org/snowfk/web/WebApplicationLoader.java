@@ -44,6 +44,7 @@ public class WebApplicationLoader {
 	Injector appInjector;
 	WebApplication webApplication;
 	ServletContext servletContext;
+	PropertyPostProcessor propertyPostProcessor;
 
 	public WebApplicationLoader(File sfkFolder, ServletContext servletContext) {
 		this.sfkFolder = sfkFolder;
@@ -117,7 +118,9 @@ public class WebApplicationLoader {
 				SnowRuntimeException se = new SnowRuntimeException(Alert.JNDI_CONFIG_PROPERTIES_JNDI_VALUE_NOT_FOUND,
 						e, "snow.jndiConfigLocation", configLocation);
 				logger.error(se.getMessage());
-				throw se;
+				// 2010-10-14-Jeremy: now, we just fail silently (this allow to
+				// have the jndi property optional)
+				// throw se;
 			}
 
 			// TODO: Should we close the InputStream or does the Properties.load
@@ -196,20 +199,34 @@ public class WebApplicationLoader {
 
 		}
 
-		String propertyPostProcessorClassName = appProperties.getProperty("snow.propertyPostProcessorClass");
-		if (propertyPostProcessorClassName != null) {
-			try {
-				Class<PropertyPostProcessor> propertyPostProcessorClass = (Class<PropertyPostProcessor>) Class
-						.forName(propertyPostProcessorClassName);
-				
-				if (propertyPostProcessorClass != null) {
-					PropertyPostProcessor propertyPostProcessor = propertyPostProcessorClass.newInstance();
-					appProperties = propertyPostProcessor.processProperties(appProperties);
+		PropertyPostProcessor propertyPostProcessor = getPropertyPostProcessor();
+
+		// if we do not have it programmatically, then, look in the
+		// snow.snow.propertyPostProcessorClass properties
+		if (propertyPostProcessor == null) {
+			String propertyPostProcessorClassName = appProperties.getProperty("snow.propertyPostProcessorClass");
+			if (propertyPostProcessorClassName != null) {
+				try {
+					Class<PropertyPostProcessor> propertyPostProcessorClass = (Class<PropertyPostProcessor>) Class
+							.forName(propertyPostProcessorClassName);
+
+					if (propertyPostProcessorClass != null) {
+						propertyPostProcessor = propertyPostProcessorClass.newInstance();
+
+					}
+				} catch (Exception e) {
+					logger.error("Cannot load or process the PropertyPostProcess class: "
+							+ propertyPostProcessorClassName + "\nException: " + e.getMessage());
 				}
-			} catch (Exception e) {
-				logger.error("Cannot load or process the PropertyPostProcess class: " + propertyPostProcessorClassName
-						+ "\nException: " + e.getMessage());
 			}
+		}
+		try {
+			if (propertyPostProcessor != null) {
+				appProperties = propertyPostProcessor.processProperties(appProperties);
+			}
+		} catch (Exception e) {
+			logger.error("Cannot process PropertyPostProcess class: " + propertyPostProcessor + "\nException: "
+					+ e.getMessage());
 		}
 
 		/*--------- /Load the Properties ---------*/
@@ -273,7 +290,25 @@ public class WebApplicationLoader {
 		return this;
 	}
 
+	// --------- Public Methods --------- //
+	public PropertyPostProcessor getPropertyPostProcessor() {
+		return propertyPostProcessor;
+	}
+
+	/**
+	 * Allow to programatically set a propertyPostProcessor to the appLoader.
+	 * Usually used for Unit Testing.
+	 * 
+	 * @param propertyPostProcessor
+	 */
+	public void setPropertyPostProcessor(PropertyPostProcessor propertyPostProcessor) {
+		this.propertyPostProcessor = propertyPostProcessor;
+	}
+
+	// --------- /Public Methods --------- //
+
 	/*--------- Privates ---------*/
+
 	private WebModule createAndRegisterWebModule(WebModuleConfig webModuleConfig, String moduleName) {
 		// probably need to add some security, such as only authorized module
 		// get WebApplication
