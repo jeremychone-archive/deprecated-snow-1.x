@@ -40,7 +40,6 @@ import org.snowfk.web.renderer.freemarker.PartCacheManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.internal.Nullable;
-import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
 
 @Singleton
 public class WebController {

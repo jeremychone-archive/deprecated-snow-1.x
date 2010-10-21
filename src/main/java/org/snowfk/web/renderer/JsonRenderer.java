@@ -9,6 +9,7 @@ import java.io.Writer;
 
 import net.sf.json.JSONSerializer;
 import net.sf.json.JsonConfig;
+import net.sf.json.util.CycleDetectionStrategy;
 
 import org.snowfk.web.part.Part;
 
@@ -38,6 +39,7 @@ public class JsonRenderer implements Renderer {
         } else {
         	JsonConfig jsonConfig = new JsonConfig();
         	jsonConfig.setExcludes(excludes);
+        	jsonConfig.setCycleDetectionStrategy(CycleDetectionStrategy.LENIENT);
         	Object jsObj = JSONSerializer.toJSON(data,jsonConfig);
         	jsonString = jsObj.toString();
         	

@@ -4,6 +4,9 @@
 package org.snowfk.web.db.hibernate;
 
 import org.aspectj.lang.annotation.SuppressAjWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.snowfk.web.WebController;
 
 
 public aspect ATransactional {
@@ -17,7 +20,8 @@ public aspect ATransactional {
          execution(public * ((@Transactional *)+).*(..)) && @this(Transactional);
          
      */
-
+	static private Logger logger = LoggerFactory.getLogger(WebController.class);
+	
     /**
      * The execution of any method that has the @Tx annotation
      */
@@ -26,20 +30,22 @@ public aspect ATransactional {
         execution(* *(..)) && @annotation(transactional);
 
     /**
-     * Placeholder for implementing tx policies  
+     * Implementating the transaction policies  
      */    
     @SuppressAjWarnings({"adviceDidNotMatch"})
     Object around(Transactional transactional) : transactionalMethodExecution(transactional) {
-
+    	
         //get the sessionHolder
         SessionHolder sessionHolder = SessionHolder.getThreadSessionHolder();
 
         boolean txOwner = false;
         //// beginTransaction if necessary
         //if there is no transaction open, then, begin the transaction, 
-        //and set this call as the txOwner        
-        if (!sessionHolder.isTxOpen()) {
-            //System.out.println(".......... Transaction Start");
+        //and set this call as the txOwner
+        // 2010-10-21-Jeremy: For now, if the sessionHolder is not found (unitTesting), we just ignore
+        
+        if (sessionHolder != null && !sessionHolder.isTxOpen()) {
+        	logger.debug("..... Transaction Start");
             sessionHolder.beginTransaction();
             txOwner = true;
         }
@@ -53,8 +59,9 @@ public aspect ATransactional {
             ret = proceed(transactional);
             //System.out.println("..... after");
             //// if this call had begun the transaction, then commit it
-            if (txOwner) {
+            if (sessionHolder != null && txOwner) {
                 sessionHolder.commitTransaction();
+                logger.debug(".......... Transaction Commit");
                 //System.out.println(".......... Transaction Commit");
             }
 
@@ -63,12 +70,13 @@ public aspect ATransactional {
             t.printStackTrace();
             SnowHibernateException she = new SnowHibernateException(t);
             System.out.flush();
-            System.out.println("SnowHibernateException message: " + she.getMessage());
+            //System.out.println("SnowHibernateException message: " + she.getMessage());
+            logger.error("SnowHibernateException message: " + she.getMessage());
             //// if this call had begun the transaction, then 
             //   do a rollback on exception
-            if (txOwner) {
+            if (sessionHolder != null && txOwner) {
                 sessionHolder.rollbackTransaction();
-                System.out.println(".......... Transaction Rollback");
+                logger.error("SnowHibernateException message: " + she.getMessage());
             }
             throw new SnowHibernateException(she);
         }
