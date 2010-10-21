@@ -8,8 +8,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -38,6 +40,7 @@ import org.snowfk.web.renderer.freemarker.PartCacheManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.internal.Nullable;
+import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
 
 @Singleton
 public class WebController {
@@ -143,13 +146,13 @@ public class WebController {
                     try {
                         webActionResponse = webApplication.processWebAction(ari, rc);
 
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
+                        if (e instanceof InvocationTargetException){
+                            e = e.getCause();
+                        }
                         // TODO Need to handle exception
-                        logger.error(e.getMessage());
-                        Throwable t = e.getCause();
-                        t = (t != null) ? t : e;
-                        logger.error(t.getMessage());
-                        webActionResponse = new WebActionResponse(new WebActionException(t));
+                        logger.error(getLogErrorString(e));
+                        webActionResponse = new WebActionResponse(new WebActionException(e));
                     }
                     rc.setWebActionResponse(webActionResponse);
                 }
@@ -206,9 +209,8 @@ public class WebController {
             if (e instanceof InvocationTargetException){
                 e = e.getCause();
             }
-            StringBuilder errorSB = new StringBuilder();
-            errorSB.append(e.getMessage());
-            logger.error(errorSB.toString());            
+
+            logger.error(getLogErrorString(e));            
         } finally {
             // --------- RequestLifeCycle end --------- //
             for (WebModule webModule : webApplication.getWebModules()){
@@ -383,6 +385,16 @@ public class WebController {
     static final private boolean isCachable(String pathInfo) {
         String ext = FileUtil.getFileNameAndExtension(pathInfo)[1];
         return cachableExtension.contains(ext);
+    }
+    
+    static final private String getLogErrorString(Throwable e){
+        StringBuilder errorSB = new StringBuilder();
+        errorSB.append(e.getMessage());
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        errorSB.append("\n-- StackTrace:\n").append(sw.toString()).append("\n-- /StackTrace");
+        return errorSB.toString();
     }
 
 }

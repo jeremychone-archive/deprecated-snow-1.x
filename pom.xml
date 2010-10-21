@@ -4,7 +4,7 @@
   <groupId>org.snowfk</groupId>
   <artifactId>snow</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.10</version>
+  <version>1.0.11</version>
   <name>snow</name>
   <url>http://maven.apache.org</url>
   
@@ -97,12 +97,21 @@
       <version>1.4</version>
     </dependency>
     
+	
     <dependency>
       <groupId>net.sf.json-lib</groupId>
       <artifactId>json-lib</artifactId>
       <version>2.3</version>
       <classifier>jdk15</classifier>
     </dependency>
+	
+	<!-- 2010-10-20-Jeremy: could not make it work yet  (in the JsonRenderer)
+	<dependency>
+      <groupId>net.sf.flexjson</groupId>
+      <artifactId>flexjson</artifactId>
+      <version>2.0</version>
+	</dependency>
+	-->
     
     <dependency>
       <groupId>org.hibernate</groupId>

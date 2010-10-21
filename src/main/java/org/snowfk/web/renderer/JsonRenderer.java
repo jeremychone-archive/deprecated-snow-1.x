@@ -5,11 +5,17 @@ package org.snowfk.web.renderer;
 
 import java.io.Writer;
 
+
+
 import net.sf.json.JSONSerializer;
+import net.sf.json.JsonConfig;
 
 import org.snowfk.web.part.Part;
 
 import com.google.inject.Singleton;
+
+
+//import flexjson.JSONSerializer;
 
 
 
@@ -22,7 +28,7 @@ import com.google.inject.Singleton;
  */
 @Singleton
 public class JsonRenderer implements Renderer {
-
+	static private final String[] excludes = {"stackTrace"}; 
     @Override
     public void processPart(Part part, Object data, Writer out) throws Exception {
         String jsonString;
@@ -30,12 +36,31 @@ public class JsonRenderer implements Renderer {
         if (data == null) {
             jsonString = "{}";
         } else {
-            Object jsObj = JSONSerializer.toJSON(data);
-            jsonString = jsObj.toString();
+        	JsonConfig jsonConfig = new JsonConfig();
+        	jsonConfig.setExcludes(excludes);
+        	Object jsObj = JSONSerializer.toJSON(data,jsonConfig);
+        	jsonString = jsObj.toString();
+        	
+        	/* 2010-10-20-Jeremy: trying to use flexjson, but to restrictive for now. 
+        	 *                    Does not serialize map (even with the MapTransformer), not list.
+        	 *                    Will give another try later.
+        	 */
+        	/*
+        	flexjson.JSONSerializer serializer = new flexjson.JSONSerializer();
+        	serializer.transform(new MapTransformer(){
+
+				@Override
+				public void transform(Object arg0) {
+					// TODO Auto-generated method stub
+					super.transform(arg0);
+				}
+        		
+        	}, Map.class);
+            jsonString = serializer.serialize( data );
+            */
         }
 
         out.write(jsonString);
-
     }
 
 }
