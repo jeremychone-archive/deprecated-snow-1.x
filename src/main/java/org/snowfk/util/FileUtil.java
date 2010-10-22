@@ -34,10 +34,10 @@ public class FileUtil {
 	static private Properties mimeTypeProperties = null;
 
 	static {
-		String mimeTypePath = "/org/snowfk/util/extramimetypes.properties";
+		String mimeTypePath = "extramimetypes.properties";
 		try {
 			Properties props = new Properties();
-			InputStream is = Class.class.getResourceAsStream (mimeTypePath);
+			InputStream is = FileUtil.class.getResourceAsStream (mimeTypePath);
 			props.load(is);
 			mimeTypeProperties = props;
 		} catch (Exception e) {
