@@ -17,7 +17,6 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.net.URL;
 
 import java.util.Map;
 import java.util.Properties;
@@ -32,15 +31,19 @@ import org.slf4j.LoggerFactory;
 public class FileUtil {
 	static private Logger logger = LoggerFactory.getLogger(FileUtil.class);
 
-	static private Properties mimeTypeProperties = new Properties();
+	static private Properties mimeTypeProperties = null;
 
 	static {
-		String mimeTypePath = "/org/snowfk/util/extra-mime-types.properties";
+		String mimeTypePath = "/org/snowfk/util/extramimetypes.properties";
 		try {
-			URL url = FileUtil.class.getResource(mimeTypePath);
-			mimeTypeProperties.load(url.openStream());
+			Properties props = new Properties();
+			InputStream is = Class.class.getResourceAsStream (mimeTypePath);
+			props.load(is);
+			mimeTypeProperties = props;
 		} catch (Exception e) {
+			
 			logger.error("Could not load the property [" + mimeTypePath + "] because " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 

@@ -35,7 +35,7 @@ public class TestModBEntityBeans extends Sample1TestSupport {
             assertEquals("John", employees[1].getFirstName());
             assertEquals("Smith", employees[1].getLastName());
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
@@ -70,7 +70,7 @@ public class TestModBEntityBeans extends Sample1TestSupport {
             //closeSessionInView
             hibernateHandler.closeSessionInView();
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
