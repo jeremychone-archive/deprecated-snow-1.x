@@ -287,6 +287,10 @@ public class WebController {
         // SystemOutUtil.printValue("RouterServlet serviceStatic pri", pri + " > " + part.getPri());
 
         String contentType = servletContext.getMimeType(fullPath);
+        //if the servletContext (server) could not fine the mimeType, then, give a little help
+        if (contentType == null){
+        	contentType = FileUtil.getExtraMimeType(fullPath);
+        }
         // long contentLength = -1L;
         int realLength = 0;
 
@@ -296,7 +300,7 @@ public class WebController {
         if (isCachable(fullPath)) {
             /*
              * NOTE: for now we remove this, in the case of a CSS, we do not
-             * know the lenght, since it is a template contentLength =
+             * know the length, since it is a template contentLength =
              * resourceFile.length();
              * 
              * if (contentLength < Integer.MAX_VALUE) {

@@ -21,9 +21,21 @@ public class FileUtilTest {
         */
 
 
-        //perform the test
+        //perform the tes
         for (String[] inAndOut : testValues) {
             assertEquals("Test for '" + inAndOut[0] + "'", inAndOut[1], FileUtil.splitIdFolder2(inAndOut[0],'/'));
         }
+    }
+    
+    @Test
+    public void testExtraMimeType(){
+    	//format: {{fileName,expectedMimeType},..}
+    	String[][] testValues = {{"some.xlsm","application/vnd.ms-excel.sheet.macroEnabled.12"}};
+    	
+    	for (String[] fileAndType : testValues){
+    		String fileName = fileAndType[0];
+    		assertEquals(fileAndType[1],FileUtil.getExtraMimeType(fileName));
+    	}
+    	
     }
 }
