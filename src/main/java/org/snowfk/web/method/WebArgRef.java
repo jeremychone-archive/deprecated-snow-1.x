@@ -56,6 +56,9 @@ public class WebArgRef {
         this.webState = webState;
     }    
 
+    public Class getArgClass(){
+    	return paramClass;
+    }
     @SuppressWarnings("unchecked")
     public Object getValue(RequestContext rc) {
         Object value = null;

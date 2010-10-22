@@ -15,6 +15,8 @@ import org.snowfk.web.auth.AuthService;
 import org.snowfk.web.db.hibernate.HibernateDaoHelper;
 import org.snowfk.web.method.WebAction;
 import org.snowfk.web.method.WebActionRef;
+import org.snowfk.web.method.WebExceptionHandler;
+import org.snowfk.web.method.WebExceptionHandlerRef;
 import org.snowfk.web.method.WebFile;
 import org.snowfk.web.method.WebFileRef;
 import org.snowfk.web.method.WebModel;
@@ -48,7 +50,8 @@ public class WebModule {
 	private List<WebModelRef> webModelRefList = new ArrayList<WebModelRef>();
 	private Map<String, WebActionRef> webActionDic = new HashMap<String, WebActionRef>();
 	private List<WebFileRef> webFileList = new ArrayList<WebFileRef>();
-
+	private Map<Class<? extends Throwable>,WebExceptionHandlerRef> webExceptionHanderMap = new HashMap<Class<? extends Throwable>, WebExceptionHandlerRef>();
+	
 	private List<TemplateDirectiveProxy> templateDirectiveProxyList = new ArrayList<TemplateDirectiveProxy>();
 
 	// injected (optional)
@@ -122,6 +125,30 @@ public class WebModule {
 		}
 		return null;
 	}
+	
+	
+	WebExceptionHandlerRef getWebExceptionRef(Class<? extends Throwable> exceptionClass){
+		WebExceptionHandlerRef ref = null;
+		
+		do {
+			ref = webExceptionHanderMap.get(exceptionClass);
+			if (ref != null){
+				return ref;
+			}
+			Class clzz = exceptionClass.getSuperclass();
+			
+			//TODO: we need to test this one further
+			if (Throwable.class.isAssignableFrom(clzz)){
+				exceptionClass = (Class<? extends Throwable>)clzz;
+			}else{
+				return null;
+			}
+			 
+			
+		}while (exceptionClass != null);
+		
+		return ref;
+	}
 
 	public List<TemplateDirectiveProxy> getTemplateDirectiveProxyList() {
 		return templateDirectiveProxyList;
@@ -156,9 +183,12 @@ public class WebModule {
 		}
 	}
 
+	//Deprecated big time
 	public File getModuleDbXmlFile() {
 		return new File(folder, "/config/db.xml");
 	}
+	
+	
 
 	/*--------- /Getters ---------*/
 
@@ -347,6 +377,11 @@ public class WebModule {
 				registerWebFile(targetObject, m, webFile);
 			}
 			// --------- /Register Web File --------- //
+			
+			WebExceptionHandler webExceptionHandler = m.getAnnotation(WebExceptionHandler.class);
+			if (webExceptionHandler != null){
+				registerWebExceptionHandler(targetObject,m,webExceptionHandler);
+			}
 
 			// --------- Register Web Template Directive --------- //
 			WebTemplateDirective webTemplateDirective = m.getAnnotation(WebTemplateDirective.class);
@@ -399,6 +434,13 @@ public class WebModule {
 		WebFileRef webFileRef = new WebFileRef(webHandler, m, webFile);
 		webFileList.add(webFileRef);
 	}
+	
+	private final void registerWebExceptionHandler(Object webHandler, Method m, WebExceptionHandler webExceptionHandler) {
+		WebExceptionHandlerRef webExcpetionHandlerRef = new WebExceptionHandlerRef(webHandler, m, webExceptionHandler);
+		webExceptionHanderMap.put(webExcpetionHandlerRef.getThrowableClass(), webExcpetionHandlerRef);
+		//webFileList.add(webFileRef);
+	}
+	
 
 	private final void registerWebTemplateDirective(Object webHandler, Method m,
 			WebTemplateDirective webTemplateDirective) throws Exception {

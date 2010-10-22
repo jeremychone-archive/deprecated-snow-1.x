@@ -70,7 +70,7 @@ public class TestModA extends Sample1TestSupport{
             
             
             
-        }catch(Exception e){
+        }catch(Throwable e){
             e.printStackTrace();
             fail(e.getMessage());
         }
@@ -86,7 +86,7 @@ public class TestModA extends Sample1TestSupport{
             webApplication.processFreemarkerPart(part, rc);
             assertEquals("This is the leafPage.ftl subPage1",sw.toString());     
             
-        }catch(Exception e){
+        }catch(Throwable e){
             e.printStackTrace();
             fail(e.getMessage());
         }
@@ -131,7 +131,7 @@ public class TestModA extends Sample1TestSupport{
             assertEquals("This is the leafPage.ftl",sw.toString());       
             
             
-        }catch(Exception e){
+        }catch(Throwable e){
             e.printStackTrace();
             fail(e.getMessage());
         }
@@ -212,7 +212,7 @@ public class TestModA extends Sample1TestSupport{
             
             
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             fail(e.getMessage());
         }

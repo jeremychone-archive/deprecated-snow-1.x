@@ -235,7 +235,7 @@ public class WebController {
     }
 
     @SuppressWarnings("unchecked")
-    public void serviceTemplateOrJson(Part part, RequestContext rc) throws Exception {
+    public void serviceTemplateOrJson(Part part, RequestContext rc) throws Throwable {
         HttpServletRequest req = rc.getReq();
         HttpServletResponse res = rc.getRes();
 

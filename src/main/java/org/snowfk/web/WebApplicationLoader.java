@@ -26,6 +26,7 @@ import org.snowfk.util.ClassesInPackageScanner;
 import org.snowfk.web.db.hibernate.HibernateDaoHelper;
 import org.snowfk.web.db.hibernate.HibernateHandler;
 import org.snowfk.web.method.WebAction;
+import org.snowfk.web.method.WebExceptionHandler;
 import org.snowfk.web.method.WebFile;
 import org.snowfk.web.method.WebModel;
 import org.snowfk.web.method.WebTemplateDirective;
@@ -362,7 +363,8 @@ public class WebApplicationLoader {
 							if (method.getAnnotation(WebAction.class) != null
 									|| method.getAnnotation(WebFile.class) != null
 									|| method.getAnnotation(WebModel.class) != null
-									|| method.getAnnotation(WebTemplateDirective.class) != null) {
+									|| method.getAnnotation(WebTemplateDirective.class) != null
+									|| method.getAnnotation(WebExceptionHandler.class) != null) {
 								return true;
 							}
 						}

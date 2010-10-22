@@ -14,8 +14,8 @@ public class WebMethodRef {
     protected Method       method;
     protected List<WebArgRef> webArgRefs = new ArrayList<WebArgRef>();
     
-    public WebMethodRef(Object object,Method method) {
-        this.webHandler = object;
+    public WebMethodRef(Object webHandler,Method method) {
+        this.webHandler = webHandler;
         this.method = method;
     }
     

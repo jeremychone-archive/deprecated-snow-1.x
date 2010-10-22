@@ -4,6 +4,7 @@
 package org.snowfk.web;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.snowfk.SnowRuntimeException;
 import org.snowfk.util.FileUtil;
 import org.snowfk.web.db.hibernate.HibernateHandler;
 import org.snowfk.web.method.WebActionRef;
+import org.snowfk.web.method.WebExceptionHandlerRef;
 import org.snowfk.web.method.WebFileRef;
 import org.snowfk.web.method.WebModelRef;
 import org.snowfk.web.part.HttpPriResolver;
@@ -273,7 +275,7 @@ public class WebApplication {
 
 	/*--------- Part Processing ---------*/
 
-	public void processJsonPart(Part part, RequestContext rc) throws Exception {
+	public void processJsonPart(Part part, RequestContext rc) throws Throwable {
 		Object data = null;
 
 		String pathInfo = rc.getPathInfo();
@@ -309,7 +311,7 @@ public class WebApplication {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void processFreemarkerPart(Part part, RequestContext rc) throws Exception {
+	public void processFreemarkerPart(Part part, RequestContext rc) throws Throwable {
 
 		// build the new model
 		Map rootModel = rc.getRootModel();
@@ -351,13 +353,13 @@ public class WebApplication {
 	/*--------- /Part Processing ---------*/
 
 	/*--------- WebMethod Processing ---------*/
-	public WebActionResponse processWebAction(String air, RequestContext rc) throws Exception {
+	public WebActionResponse processWebAction(String air, RequestContext rc) throws Throwable {
 		String[] webModuleNameAndActionName = air.split(":");
 		return processWebAction(webModuleNameAndActionName[0], webModuleNameAndActionName[1], rc);
 	}
 
 	public WebActionResponse processWebAction(String webModuleName, String webActionName, RequestContext rc)
-			throws Exception {
+			throws Throwable {
 		WebModule webModule = getWebModule(webModuleName);
 		rc.pushCurrentWebModule(webModule);
 		if (webModule == null) {
@@ -372,18 +374,23 @@ public class WebApplication {
 		// --------- Invoke Method --------- //
 		WebHandlerMethodInterceptor methodInterceptor = webModule.getWebHandlerMethodInterceptor();
 		boolean invokeWebAction = true;
-
-		if (methodInterceptor != null) {
-			invokeWebAction = methodInterceptor.before(webActionRef.getMethod(), rc);
-		}
-
+		
 		Object result = null;
-		if (invokeWebAction) {
-			result = webActionRef.invokeWebAction(rc);
-		}
+		
+		try {
+			if (methodInterceptor != null) {
+				invokeWebAction = methodInterceptor.before(webActionRef.getMethod(), rc);
+			}
 
-		if (methodInterceptor != null) {
-			methodInterceptor.after(webActionRef.getMethod(), rc);
+			if (invokeWebAction) {
+				result = webActionRef.invokeWebAction(rc);
+			}
+
+			if (methodInterceptor != null) {
+				methodInterceptor.after(webActionRef.getMethod(), rc);
+			}
+		} catch (Throwable t) {
+			processWebExceptionHandler(webModule, t, rc);
 		}
 		// --------- /Invoke Method --------- //
 
@@ -393,7 +400,7 @@ public class WebApplication {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void proccessWebModels(String webModuleName, Map m, RequestContext rc) throws Exception {
+	public void proccessWebModels(String webModuleName, Map m, RequestContext rc) throws Throwable {
 		WebModule webModule = getWebModule(webModuleName);
 		if (webModule == null) {
 			throw new Exception("No webModule found for: " + webModuleName);
@@ -422,25 +429,64 @@ public class WebApplication {
 	}
 
 	private void invokeWebModelRef(WebModule webModule, WebModelRef webModelRef, Map m, RequestContext rc)
-			throws Exception {
+			throws Throwable {
 
 		if (webModelRef != null) {
-			
+
 			WebHandlerMethodInterceptor methodInterceptor = webModule.getWebHandlerMethodInterceptor();
 			boolean invokeWebAction = true;
 
-			if (methodInterceptor != null) {
-				invokeWebAction = methodInterceptor.before(webModelRef.getMethod(), rc);
+			try {
+				if (methodInterceptor != null) {
+					invokeWebAction = methodInterceptor.before(webModelRef.getMethod(), rc);
+				}
+
+				if (invokeWebAction) {
+					webModelRef.invokeWebModel(m, rc);
+				}
+
+				if (methodInterceptor != null) {
+					methodInterceptor.after(webModelRef.getMethod(), rc);
+				}
+			} catch (Throwable e) {
+				processWebExceptionHandler(webModule, e, rc);
 			}
 
-			if (invokeWebAction) {
-				webModelRef.invokeWebModel(m, rc);
-			}
+		}
+	}
 
-			if (methodInterceptor != null) {
-				methodInterceptor.after(webModelRef.getMethod(), rc);
-			}			
-			
+	/**
+	 * This will look for a matching WebExceptionHandlerRef and invoke it,
+	 * otherwise, will throw the cause of the InvocationTargetException
+	 * 
+	 * @param webModule
+	 * @param e
+	 * @param rc
+	 * @throws Throwable
+	 *             Will throw the cause of the InvocationTargetException if no
+	 *             Throwable t = e.getCause(); found
+	 */
+	private void processWebExceptionHandler(WebModule webModule, Throwable e, RequestContext rc)
+			throws Throwable {
+		Throwable t = null;
+		
+		if (e instanceof InvocationTargetException){
+			t = ((InvocationTargetException)e).getCause();
+		}
+
+		if (t != null) {
+			WebExceptionHandlerRef ref = webModule.getWebExceptionRef(t.getClass());
+
+			// if we find the issue
+			if (ref != null) {
+				ref.invokeWebExceptionHandler(t, rc);
+				// TODO: miwht want to try catch, and throw the cause as well
+				// (to be consistent
+			} else {
+				throw t;
+			}
+		} else {
+			throw e;
 		}
 	}
 
