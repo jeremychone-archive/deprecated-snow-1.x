@@ -34,9 +34,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class WebApplicationLoader {
-    static private Logger logger = LoggerFactory.getLogger(WebApplicationLoader.class);
+    static private Logger       logger           = LoggerFactory.getLogger(WebApplicationLoader.class);
     static private final String DEFAULT_APP_NAME = "default";
-    
+
     public enum Alert {
         JNDI_CONFIG_PROPERTIES_FILE_NOT_FOUND,
         JNDI_CONFIG_PROPERTIES_JNDI_VALUE_NOT_FOUND,
@@ -249,7 +249,9 @@ public class WebApplicationLoader {
             WebModule webModule = createAndRegisterWebModule(webAppModuleConfig, applicationWebModuleName);
 
             // set the root webapp folder as the view folder
-            webModule.setViewFolder(getWebAppFolder());
+            if (servletContext != null) {
+                webModule.setViewFolder(getWebAppFolder());
+            }
             // set the /WEB-INF/snow/conf as the conf folder
             webModule.setConfigFolder(new File(sfkFolder, "/config"));
 
@@ -266,8 +268,8 @@ public class WebApplicationLoader {
             File modulePropertiesFile = new File(webModuleFolder, "module.properties");
 
             WebModuleConfig webModuleConfig;
-            String webModuleName = null; 
-            
+            String webModuleName = null;
+
             if (modulePropertiesFile.exists()) {
                 Properties moduleProperties = new Properties();
                 moduleProperties.load(new FileReader(modulePropertiesFile));
@@ -280,8 +282,8 @@ public class WebApplicationLoader {
             } else {
                 webModuleConfig = new WebModuleConfig();
             }
-            
-            if (webModuleName == null){
+
+            if (webModuleName == null) {
                 webModuleName = webModuleFolder.getName();
             }
 
@@ -300,7 +302,7 @@ public class WebApplicationLoader {
             webModule.setViewFolder(getWebAppFolder());
             // set the /WEB-INF/snow/conf as the conf folder
             webModule.setConfigFolder(new File(sfkFolder, "/WEB-INF/snow/conf"));
-            
+
             webApplication.setSnowDefaultModuleName(webModule.getName());
         }
         // --------- /Set Blank WebModule if no Default Module --------- //
