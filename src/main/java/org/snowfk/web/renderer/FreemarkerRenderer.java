@@ -18,6 +18,7 @@ import org.snowfk.web.WebModule;
 import org.snowfk.web.part.Part;
 import org.snowfk.web.renderer.freemarker.FreemarkerUtil;
 import org.snowfk.web.renderer.freemarker.HrefPartTemplateMethod;
+import org.snowfk.web.renderer.freemarker.IncludeFrameContentTemplateDirective;
 import org.snowfk.web.renderer.freemarker.IncludeTemplateDirective;
 import org.snowfk.web.renderer.freemarker.LinksDirective;
 import org.snowfk.web.renderer.freemarker.MaxTemplateMethod;
@@ -40,18 +41,19 @@ import freemarker.template.Template;
 
 @Singleton
 public class FreemarkerRenderer implements Renderer {
-    static private Logger logger = LoggerFactory.getLogger(FreemarkerRenderer.class);
-    
-    private Configuration            conf = new Configuration();
-    private ServletContext           servletContext;
+    static private Logger                        logger = LoggerFactory.getLogger(FreemarkerRenderer.class);
 
-    private File                     sfkFolder;
+    private Configuration                        conf   = new Configuration();
+    private ServletContext                       servletContext;
 
-    private IncludeTemplateDirective includeTemplateDirective;
-    private LinksDirective           linksDirective;
-    private MaxTemplateMethod        maxTemplateMethod;
-    private HrefPartTemplateMethod   hrefPartTemplateMethod;
-    private WebApplication           webApplication;
+    private File                                 sfkFolder;
+
+    private IncludeTemplateDirective             includeTemplateDirective;
+    private IncludeFrameContentTemplateDirective includeFrameContentTemplateDirective;
+    private LinksDirective                       linksDirective;
+    private MaxTemplateMethod                    maxTemplateMethod;
+    private HrefPartTemplateMethod               hrefPartTemplateMethod;
+    private WebApplication                       webApplication;
 
     @Inject
     public FreemarkerRenderer(@Named("snow.snowFolder") File snowFolder, WebApplication webApplication) {
@@ -60,9 +62,12 @@ public class FreemarkerRenderer implements Renderer {
     }
 
     @Inject
-    public void injectDirectives(IncludeTemplateDirective includeTemplateDirective, LinksDirective linksDirective,
-                                 MaxTemplateMethod maxTemplateMethod, HrefPartTemplateMethod hrefPartTemplateMethod) {
+    public void injectDirectives(IncludeTemplateDirective includeTemplateDirective,
+                            IncludeFrameContentTemplateDirective includeFrameContentTemplateDirective,
+                            LinksDirective linksDirective, MaxTemplateMethod maxTemplateMethod,
+                            HrefPartTemplateMethod hrefPartTemplateMethod) {
         this.includeTemplateDirective = includeTemplateDirective;
+        this.includeFrameContentTemplateDirective = includeFrameContentTemplateDirective;
         this.linksDirective = linksDirective;
         this.maxTemplateMethod = maxTemplateMethod;
         this.hrefPartTemplateMethod = hrefPartTemplateMethod;
@@ -117,6 +122,8 @@ public class FreemarkerRenderer implements Renderer {
         conf.setWhitespaceStripping(true);
 
         conf.setSharedVariable("includeTemplate", includeTemplateDirective);
+        
+        conf.setSharedVariable("includeFrameContent", includeFrameContentTemplateDirective);
 
         conf.setSharedVariable("links", linksDirective);
 
@@ -129,14 +136,12 @@ public class FreemarkerRenderer implements Renderer {
         conf.setSharedVariable("piIs", new PathInfoMatcherTemplateMethod(PathInfoMatcherTemplateMethod.Mode.IS));
 
         conf.setSharedVariable("piStarts", new PathInfoMatcherTemplateMethod(PathInfoMatcherTemplateMethod.Mode.STARTS_WITH));
-        
-        for (WebModule module : webApplication.getWebModules()){
-            for (TemplateDirectiveProxy directiveProxy : module.getTemplateDirectiveProxyList()){
+
+        for (WebModule module : webApplication.getWebModules()) {
+            for (TemplateDirectiveProxy directiveProxy : module.getTemplateDirectiveProxyList()) {
                 conf.setSharedVariable(directiveProxy.getName(), directiveProxy);
             }
         }
-        
-        
 
     }
 
@@ -144,8 +149,8 @@ public class FreemarkerRenderer implements Renderer {
     public void processPart(Part part, Object data, Writer out) throws Exception {
 
         if (!(data instanceof Map)) {
-            throw new Exception("FreemarkerRenderer.processPart requires 'data' to be of type 'Map'. Current data type "
-                                    + ((data != null) ? data.getClass() : "null"));
+            throw new Exception("FreemarkerRenderer.processPart requires 'data' to be of type 'Map'. Current data type " + ((data != null) ? data.getClass()
+                                    : "null"));
         }
 
         Map model = (Map) data;

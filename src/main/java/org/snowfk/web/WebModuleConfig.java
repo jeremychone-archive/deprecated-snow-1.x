@@ -85,6 +85,16 @@ public class WebModuleConfig extends AbstractModule {
     public HibernateDaoHelper provideHibernateDaoHelper(Injector injector){
         return injector.getInstance(HibernateDaoHelperImpl.class);
     }
+    
+    
+    /**
+     * This should be overridden by the WebModuleConfig to provide a name.
+     * If not overridden (i.e. will return null), Snow will try to guess the name from the module folder (if applicable) or throw an exception.
+     * @return the name of the WebModule. Should be overridden (base implementation return null)
+     */
+    public String getWebModuleName(){
+        return null;
+    }
 
     /*--------- Set by WebApplicationLoader ---------*/
     /**

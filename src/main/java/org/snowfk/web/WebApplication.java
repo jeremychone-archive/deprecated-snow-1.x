@@ -67,6 +67,11 @@ public class WebApplication {
 		this.hibernateHandler = hibernateHandler;
 	}
 
+	/**
+	 * Can be injected via the application.properties, or could be set by the WebApplicationLoader from the 
+	 * snow.applicationWebModuleConfigClass.getWebModuleName()
+	 * @param defaultModuleName
+	 */
 	@Inject(optional = true)
 	public void setSnowDefaultModuleName(@Nullable @Named("snow.defaultWebModuleName") String defaultModuleName) {
 		this.defaultModuleName = defaultModuleName;
