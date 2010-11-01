@@ -9,14 +9,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.snowfk.web.RequestContext;
+import org.snowfk.web.method.argument.WebArgRef;
 
 
 
-public class WebModelRef extends WebMethodRef implements PathMatcher {
+public class WebModelHandlerRef extends BaseWebHandlerRef implements PathMatcher {
 
-    WebModel webModel;
+    WebModelHandler webModel;
 
-    public WebModelRef(Object object, Method method, WebModel webModel) {
+    public WebModelHandlerRef(Object object, Method method, WebModelHandler webModel) {
         super(object, method);
         this.webModel = webModel;
         

@@ -3,22 +3,22 @@ package org.snowfk.test.sample1.modA;
 import java.util.Map;
 
 import org.snowfk.util.MapUtil;
-import org.snowfk.web.method.WebAction;
+import org.snowfk.web.method.WebActionHandler;
 
 public class WebBeanActions {
 
     
-    @WebAction
+    @WebActionHandler
     public String sayHelloWorld(){
         return "Hello World";
     }
     
-    @WebAction
+    @WebActionHandler
     public String sayHelloUsa(){
         return "Hello USA";
     }
     
-    @WebAction
+    @WebActionHandler
     public Map updateEmployee(){
         return MapUtil.mapIt("firstName","mike","lastName","donavan");
     }

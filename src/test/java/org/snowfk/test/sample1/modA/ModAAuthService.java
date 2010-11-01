@@ -3,8 +3,8 @@ package org.snowfk.test.sample1.modA;
 import org.snowfk.web.RequestContext;
 import org.snowfk.web.auth.Auth;
 import org.snowfk.web.auth.AuthService;
-import org.snowfk.web.method.WebAction;
-import org.snowfk.web.method.WebParam;
+import org.snowfk.web.method.WebActionHandler;
+import org.snowfk.web.method.argument.WebParam;
 
 import com.google.inject.Singleton;
 
@@ -20,7 +20,7 @@ public class ModAAuthService implements AuthService{
         return null;
     }
     
-    @WebAction
+    @WebActionHandler
     public void login(@WebParam("username") String username,@WebParam("password") String password){
         
     }

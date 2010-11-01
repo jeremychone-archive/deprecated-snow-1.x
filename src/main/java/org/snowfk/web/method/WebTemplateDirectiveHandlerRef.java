@@ -7,13 +7,14 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import org.snowfk.web.RequestContext;
+import org.snowfk.web.method.argument.WebArgRef;
 
 import freemarker.core.Environment;
 
-public class WebTemplateDirectiveRef extends WebMethodRef {
+public class WebTemplateDirectiveHandlerRef extends BaseWebHandlerRef {
 
     
-    public WebTemplateDirectiveRef(Object object, Method method) {
+    public WebTemplateDirectiveHandlerRef(Object object, Method method) {
         super(object, method);
         // TODO Auto-generated constructor stub
         initWebParamRefs();

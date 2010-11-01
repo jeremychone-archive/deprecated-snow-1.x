@@ -6,12 +6,13 @@ import java.util.regex.Pattern;
 
 import org.snowfk.util.FileUtil;
 import org.snowfk.web.RequestContext;
+import org.snowfk.web.method.argument.WebArgRef;
 
-public class WebFileRef extends WebMethodRef implements PathMatcher {
+public class WebFileHandlerRef extends BaseWebHandlerRef implements PathMatcher {
 
-    private WebFile webFile;
+    private WebFileHandler webFile;
 
-    public WebFileRef(Object object, Method method, WebFile webFile) {
+    public WebFileHandlerRef(Object object, Method method, WebFileHandler webFile) {
         super(object, method);
         this.webFile = webFile;
         initWebParamRefs();

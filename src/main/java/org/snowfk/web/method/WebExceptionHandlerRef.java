@@ -3,8 +3,9 @@ package org.snowfk.web.method;
 import java.lang.reflect.Method;
 
 import org.snowfk.web.RequestContext;
+import org.snowfk.web.method.argument.WebArgRef;
 
-public class WebExceptionHandlerRef extends WebMethodRef {
+public class WebExceptionHandlerRef extends BaseWebHandlerRef {
 	@SuppressWarnings("unused")
 	private WebExceptionHandler webExceptionHandler;
 	

@@ -24,18 +24,19 @@ import org.snowfk.SnowRuntimeException;
 import org.snowfk.util.ClassesInPackageScanner;
 import org.snowfk.web.db.hibernate.HibernateDaoHelper;
 import org.snowfk.web.db.hibernate.HibernateHandler;
-import org.snowfk.web.method.WebAction;
+import org.snowfk.web.method.WebActionHandler;
 import org.snowfk.web.method.WebExceptionHandler;
-import org.snowfk.web.method.WebFile;
-import org.snowfk.web.method.WebModel;
-import org.snowfk.web.method.WebTemplateDirective;
+import org.snowfk.web.method.WebFileHandler;
+import org.snowfk.web.method.WebModelHandler;
+import org.snowfk.web.method.WebTemplateDirectiveHandler;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class WebApplicationLoader {
     static private Logger logger = LoggerFactory.getLogger(WebApplicationLoader.class);
-
+    static private final String DEFAULT_APP_NAME = "default";
+    
     public enum Alert {
         JNDI_CONFIG_PROPERTIES_FILE_NOT_FOUND,
         JNDI_CONFIG_PROPERTIES_JNDI_VALUE_NOT_FOUND,
@@ -243,14 +244,14 @@ public class WebApplicationLoader {
             String applicationWebModuleName = webAppModuleConfig.getWebModuleName();
 
             if (applicationWebModuleName == null) {
-                applicationWebModuleName = "app";
+                applicationWebModuleName = DEFAULT_APP_NAME;
             }
             WebModule webModule = createAndRegisterWebModule(webAppModuleConfig, applicationWebModuleName);
 
             // set the root webapp folder as the view folder
             webModule.setViewFolder(getWebAppFolder());
             // set the /WEB-INF/snow/conf as the conf folder
-            webModule.setConfigFolder(new File(sfkFolder, "/WEB-INF/snow/conf"));
+            webModule.setConfigFolder(new File(sfkFolder, "/config"));
 
             webApplication.setSnowDefaultModuleName(applicationWebModuleName);
         }
@@ -294,7 +295,7 @@ public class WebApplicationLoader {
 
         // --------- Set Blank WebModule if no Default Module --------- //
         if (webApplication.getDefaultWebModule() == null) {
-            WebModule webModule = createAndRegisterAppWebModule();
+            WebModule webModule = createAndRegisterBlankDefaultWebModule();
             // set the root webapp folder as the view folder
             webModule.setViewFolder(getWebAppFolder());
             // set the /WEB-INF/snow/conf as the conf folder
@@ -323,8 +324,8 @@ public class WebApplicationLoader {
     // --------- /Public Methods --------- //
 
     /*--------- Privates ---------*/
-    private WebModule createAndRegisterAppWebModule() {
-        return createAndRegisterWebModule(null, "app");
+    private WebModule createAndRegisterBlankDefaultWebModule() {
+        return createAndRegisterWebModule(null, DEFAULT_APP_NAME);
     }
 
     private WebModule createAndRegisterWebModule(WebModuleConfig webModuleConfig, String moduleName) {
@@ -385,9 +386,9 @@ public class WebApplicationLoader {
             @Override
             public boolean acceptClass(Class<?> cls) {
                 for (Method method : cls.getDeclaredMethods()) {
-                    if (method.getAnnotation(WebAction.class) != null || method.getAnnotation(WebFile.class) != null
-                                            || method.getAnnotation(WebModel.class) != null
-                                            || method.getAnnotation(WebTemplateDirective.class) != null
+                    if (method.getAnnotation(WebActionHandler.class) != null || method.getAnnotation(WebFileHandler.class) != null
+                                            || method.getAnnotation(WebModelHandler.class) != null
+                                            || method.getAnnotation(WebTemplateDirectiveHandler.class) != null
                                             || method.getAnnotation(WebExceptionHandler.class) != null) {
                         return true;
                     }

@@ -10,8 +10,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME) 
 @Target(ElementType.METHOD)
-public @interface WebModel {
-
-    String[] startsWith() default {};
-    String[] matches() default {};
+public @interface WebTemplateDirectiveHandler {
+    String name() default "";
 }

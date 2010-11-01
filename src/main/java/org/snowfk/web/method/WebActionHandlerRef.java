@@ -7,18 +7,19 @@ package org.snowfk.web.method;
 import java.lang.reflect.Method;
 
 import org.snowfk.web.RequestContext;
+import org.snowfk.web.method.argument.WebArgRef;
 
 
-public class WebActionRef extends WebMethodRef{
+public class WebActionHandlerRef extends BaseWebHandlerRef{
 
 
     @SuppressWarnings("unused")
-    private WebAction    webAction;
+    private WebActionHandler    webAction;
     
 
 
     /*--------- Initialization ---------*/
-    public WebActionRef(Object object, Method method, WebAction webAction) {
+    public WebActionHandlerRef(Object object, Method method, WebActionHandler webAction) {
         super(object,method);
 
         this.webAction = webAction;

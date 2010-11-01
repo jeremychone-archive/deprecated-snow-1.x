@@ -11,7 +11,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snowfk.web.RequestContext;
-import org.snowfk.web.method.WebTemplateDirectiveRef;
+import org.snowfk.web.method.WebTemplateDirectiveHandlerRef;
 
 import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
@@ -23,9 +23,9 @@ public class TemplateDirectiveProxy implements TemplateDirectiveModel {
     static private Logger logger = LoggerFactory.getLogger(TemplateDirectiveProxy.class);
     
     private String name;
-    private WebTemplateDirectiveRef webTemplateDirectiveRef;
+    private WebTemplateDirectiveHandlerRef webTemplateDirectiveRef;
     
-    public TemplateDirectiveProxy(String name,WebTemplateDirectiveRef webTemplateDirectiveRef){
+    public TemplateDirectiveProxy(String name,WebTemplateDirectiveHandlerRef webTemplateDirectiveRef){
         this.name = name;
         this.webTemplateDirectiveRef = webTemplateDirectiveRef;
     }

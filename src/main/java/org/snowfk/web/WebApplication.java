@@ -16,10 +16,10 @@ import org.slf4j.LoggerFactory;
 import org.snowfk.SnowRuntimeException;
 import org.snowfk.util.FileUtil;
 import org.snowfk.web.db.hibernate.HibernateHandler;
-import org.snowfk.web.method.WebActionRef;
+import org.snowfk.web.method.WebActionHandlerRef;
 import org.snowfk.web.method.WebExceptionHandlerRef;
-import org.snowfk.web.method.WebFileRef;
-import org.snowfk.web.method.WebModelRef;
+import org.snowfk.web.method.WebFileHandlerRef;
+import org.snowfk.web.method.WebModelHandlerRef;
 import org.snowfk.web.part.HttpPriResolver;
 import org.snowfk.web.part.Part;
 import org.snowfk.web.part.PartResolver;
@@ -343,7 +343,7 @@ public class WebApplication {
 		WebModule module = part.getWebModule();
 		rc.pushCurrentWebModule(module);
 		String priPath = rc.getCurrentPriFullPath();
-		WebFileRef webFileRef = module.getWebFileRef(priPath);
+		WebFileHandlerRef webFileRef = module.getWebFileRef(priPath);
 		if (webFileRef != null) {
 			webFileRef.invokeWebFile(rc);
 			rc.pollCurrentWebModule();
@@ -365,19 +365,26 @@ public class WebApplication {
 
 	public WebActionResponse processWebAction(String webModuleName, String webActionName, RequestContext rc)
 			throws Throwable {
-		WebModule webModule = getWebModule(webModuleName);
+		WebModule webModule = null;
+		
+		if (webModuleName != null){
+		    webModule = getWebModule(webModuleName);
+		}else{
+		    webModule = getDefaultWebModule();
+		}
+		
 		rc.pushCurrentWebModule(webModule);
 		if (webModule == null) {
 			throw new Exception("No webModule found for: " + webModuleName);
 		}
 
-		WebActionRef webActionRef = webModule.getWebActionRef(webActionName);
+		WebActionHandlerRef webActionRef = webModule.getWebActionRef(webActionName);
 		if (webActionRef == null) {
 			throw new SnowRuntimeException(Alert.NO_WEB_ACTION, "WebAction", webModuleName + ":" + webActionName);
 		}
 
 		// --------- Invoke Method --------- //
-		WebHandlerMethodInterceptor methodInterceptor = webModule.getWebHandlerMethodInterceptor();
+		WebHandlerInterceptor methodInterceptor = webModule.getWebHandlerMethodInterceptor();
 		boolean invokeWebAction = true;
 		
 		Object result = null;
@@ -412,7 +419,7 @@ public class WebApplication {
 		}
 
 		// get the rootModelBuilder
-		WebModelRef rootWmr = webModule.getWebModelRef("/");
+		WebModelHandlerRef rootWmr = webModule.getWebModelRef("/");
 		if (rootWmr != null) {
 			invokeWebModelRef(webModule, rootWmr, m, rc);
 		}
@@ -422,23 +429,23 @@ public class WebApplication {
 		StringBuilder pathBuilder = new StringBuilder();
 		for (int i = 0; i < priPaths.length; i++) {
 			String path = pathBuilder.append('/').append(priPaths[i]).toString();
-			WebModelRef webModelRef = webModule.getWebModelRef(path);
+			WebModelHandlerRef webModelRef = webModule.getWebModelRef(path);
 			invokeWebModelRef(webModule, webModelRef, m, rc);
 		}
 
 		// Match and process the "matches" webModels
-		List<WebModelRef> matchWebModelRefs = webModule.getMatchWebModelRef(pathBuilder.toString());
-		for (WebModelRef webModelRef : matchWebModelRefs) {
+		List<WebModelHandlerRef> matchWebModelRefs = webModule.getMatchWebModelRef(pathBuilder.toString());
+		for (WebModelHandlerRef webModelRef : matchWebModelRefs) {
 			invokeWebModelRef(webModule, webModelRef, m, rc);
 		}
 	}
 
-	private void invokeWebModelRef(WebModule webModule, WebModelRef webModelRef, Map m, RequestContext rc)
+	private void invokeWebModelRef(WebModule webModule, WebModelHandlerRef webModelRef, Map m, RequestContext rc)
 			throws Throwable {
 
 		if (webModelRef != null) {
 
-			WebHandlerMethodInterceptor methodInterceptor = webModule.getWebHandlerMethodInterceptor();
+			WebHandlerInterceptor methodInterceptor = webModule.getWebHandlerMethodInterceptor();
 			boolean invokeWebAction = true;
 
 			try {

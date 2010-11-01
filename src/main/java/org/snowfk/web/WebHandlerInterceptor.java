@@ -2,10 +2,10 @@ package org.snowfk.web;
 
 import java.lang.reflect.Method;
 
-public interface WebHandlerMethodInterceptor {
+public interface WebHandlerInterceptor {
 
 	/**
-	 * Called before any @WebModel or @WebAction method (we will add @WebFile later)
+	 * Called before any @WebModel, @WebAction 
 	 * 
 	 * @param method the method being called
 	 * @param rc the requestContext

@@ -8,13 +8,21 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.snowfk.web.method.argument.WebArgRef;
+import org.snowfk.web.method.argument.WebEntity;
+import org.snowfk.web.method.argument.WebMap;
+import org.snowfk.web.method.argument.WebParam;
+import org.snowfk.web.method.argument.WebPath;
+import org.snowfk.web.method.argument.WebState;
+import org.snowfk.web.method.argument.WebUser;
 
-public class WebMethodRef {
+
+public class BaseWebHandlerRef {
     protected Object       webHandler;
     protected Method       method;
     protected List<WebArgRef> webArgRefs = new ArrayList<WebArgRef>();
     
-    public WebMethodRef(Object webHandler,Method method) {
+    public BaseWebHandlerRef(Object webHandler,Method method) {
         this.webHandler = webHandler;
         this.method = method;
     }

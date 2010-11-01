@@ -1,4 +1,4 @@
-package org.snowfk.web.method;
+package org.snowfk.web.method.argument;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME) 
 @Target(ElementType.PARAMETER)
-public @interface WebState {
-
+public @interface WebEntity {
     String value();
-    
 }

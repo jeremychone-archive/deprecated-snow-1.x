@@ -13,16 +13,16 @@ import java.util.Map;
 import org.hibernate.Interceptor;
 import org.snowfk.web.auth.AuthService;
 import org.snowfk.web.db.hibernate.HibernateDaoHelper;
-import org.snowfk.web.method.WebAction;
-import org.snowfk.web.method.WebActionRef;
+import org.snowfk.web.method.WebActionHandler;
+import org.snowfk.web.method.WebActionHandlerRef;
 import org.snowfk.web.method.WebExceptionHandler;
 import org.snowfk.web.method.WebExceptionHandlerRef;
-import org.snowfk.web.method.WebFile;
-import org.snowfk.web.method.WebFileRef;
-import org.snowfk.web.method.WebModel;
-import org.snowfk.web.method.WebModelRef;
-import org.snowfk.web.method.WebTemplateDirective;
-import org.snowfk.web.method.WebTemplateDirectiveRef;
+import org.snowfk.web.method.WebFileHandler;
+import org.snowfk.web.method.WebFileHandlerRef;
+import org.snowfk.web.method.WebModelHandler;
+import org.snowfk.web.method.WebModelHandlerRef;
+import org.snowfk.web.method.WebTemplateDirectiveHandler;
+import org.snowfk.web.method.WebTemplateDirectiveHandlerRef;
 import org.snowfk.web.names.EntityClasses;
 import org.snowfk.web.names.LeafPaths;
 import org.snowfk.web.names.WebHandlers;
@@ -46,10 +46,10 @@ public class WebModule {
 	// // Injected from WebModuleConfig
 	private Class[] entityClasses;
 	// // Set Initialization Methods
-	private Map<String, WebModelRef> webModelByStartsWithMap = new HashMap<String, WebModelRef>();
-	private List<WebModelRef> webModelRefList = new ArrayList<WebModelRef>();
-	private Map<String, WebActionRef> webActionDic = new HashMap<String, WebActionRef>();
-	private List<WebFileRef> webFileList = new ArrayList<WebFileRef>();
+	private Map<String, WebModelHandlerRef> webModelByStartsWithMap = new HashMap<String, WebModelHandlerRef>();
+	private List<WebModelHandlerRef> webModelRefList = new ArrayList<WebModelHandlerRef>();
+	private Map<String, WebActionHandlerRef> webActionDic = new HashMap<String, WebActionHandlerRef>();
+	private List<WebFileHandlerRef> webFileList = new ArrayList<WebFileHandlerRef>();
 	private Map<Class<? extends Throwable>,WebExceptionHandlerRef> webExceptionHanderMap = new HashMap<Class<? extends Throwable>, WebExceptionHandlerRef>();
 	
 	private List<TemplateDirectiveProxy> templateDirectiveProxyList = new ArrayList<TemplateDirectiveProxy>();
@@ -73,7 +73,7 @@ public class WebModule {
 	private RequestLifeCycle requestLifeCycle;
 	
 	// injection (optional)
-	private WebHandlerMethodInterceptor webHandlerMethodInterceptor;
+	private WebHandlerInterceptor webHandlerMethodInterceptor;
 
 	// injection (optional)
 	private HibernateDaoHelper hibernateDaoHelper;
@@ -93,18 +93,18 @@ public class WebModule {
 	/* --------- /Injector Methods --------- */
 
 	/*--------- Getters ---------*/
-	WebActionRef getWebActionRef(String actionName) {
+	WebActionHandlerRef getWebActionRef(String actionName) {
 		return webActionDic.get(actionName);
 	}
 
-	WebModelRef getWebModelRef(String path) {
+	WebModelHandlerRef getWebModelRef(String path) {
 		return webModelByStartsWithMap.get(path);
 	}
 
-	List<WebModelRef> getMatchWebModelRef(String fullPriPath) {
-		List<WebModelRef> matchWebModelRefs = new ArrayList<WebModelRef>();
+	List<WebModelHandlerRef> getMatchWebModelRef(String fullPriPath) {
+		List<WebModelHandlerRef> matchWebModelRefs = new ArrayList<WebModelHandlerRef>();
 
-		for (WebModelRef webModelRef : webModelRefList) {
+		for (WebModelHandlerRef webModelRef : webModelRefList) {
 			// System.out.println("WebModule.getMatchWebModeulRef: " +
 			// webModelRef.toString());
 			boolean match = webModelRef.matchesPath(fullPriPath);
@@ -116,8 +116,8 @@ public class WebModule {
 		return matchWebModelRefs;
 	}
 
-	WebFileRef getWebFileRef(String path) {
-		for (WebFileRef webFileRef : webFileList) {
+	WebFileHandlerRef getWebFileRef(String path) {
+		for (WebFileHandlerRef webFileRef : webFileList) {
 			boolean match = webFileRef.matchesPath(path);
 			if (match) {
 				return webFileRef;
@@ -253,12 +253,12 @@ public class WebModule {
 		requestLifeCycle = rlc;
 	}
 	
-	public WebHandlerMethodInterceptor getWebHandlerMethodInterceptor(){
+	public WebHandlerInterceptor getWebHandlerMethodInterceptor(){
 		return webHandlerMethodInterceptor;
 	}
 	
 	@Inject(optional = true)
-	public void setWebHandlerMethodInterceptor(WebHandlerMethodInterceptor webHandlerMethodInterceptor){
+	public void setWebHandlerMethodInterceptor(WebHandlerInterceptor webHandlerMethodInterceptor){
 		this.webHandlerMethodInterceptor = webHandlerMethodInterceptor;
 	}
 
@@ -356,7 +356,7 @@ public class WebModule {
 			// Annotation[] as = m.getAnnotations();
 
 			// --------- Register Web Action --------- //
-			WebAction action = m.getAnnotation(WebAction.class);
+			WebActionHandler action = m.getAnnotation(WebActionHandler.class);
 			// if it is an action method, then, add the WebAction Object and
 			// Method to the action Dic
 			if (action != null) {
@@ -365,14 +365,14 @@ public class WebModule {
 			// --------- /Register Web Action --------- //
 
 			// --------- Register Web Model --------- //
-			WebModel modelBuilder = m.getAnnotation(WebModel.class);
+			WebModelHandler modelBuilder = m.getAnnotation(WebModelHandler.class);
 			if (modelBuilder != null) {
 				registerWebModel(targetObject, m, modelBuilder);
 			}
 			// --------- Register Web Model --------- //
 
 			// --------- Register Web File --------- //
-			WebFile webFile = m.getAnnotation(WebFile.class);
+			WebFileHandler webFile = m.getAnnotation(WebFileHandler.class);
 			if (webFile != null) {
 				registerWebFile(targetObject, m, webFile);
 			}
@@ -384,7 +384,7 @@ public class WebModule {
 			}
 
 			// --------- Register Web Template Directive --------- //
-			WebTemplateDirective webTemplateDirective = m.getAnnotation(WebTemplateDirective.class);
+			WebTemplateDirectiveHandler webTemplateDirective = m.getAnnotation(WebTemplateDirectiveHandler.class);
 			if (webTemplateDirective != null) {
 
 				registerWebTemplateDirective(targetObject, m, webTemplateDirective);
@@ -394,11 +394,11 @@ public class WebModule {
 		}
 	}
 
-	private final void registerWebModel(Object webHandler, Method m, WebModel webModel) {
+	private final void registerWebModel(Object webHandler, Method m, WebModelHandler webModel) {
 		// System.out.println("Register WebModel " + getName() + " - " +
 		// m.getName());
 
-		WebModelRef webModelRef = new WebModelRef(webHandler, m, webModel);
+		WebModelHandlerRef webModelRef = new WebModelHandlerRef(webHandler, m, webModel);
 		webModelRefList.add(webModelRef);
 
 		String startWithArray[] = webModel.startsWith();
@@ -407,7 +407,7 @@ public class WebModule {
 		}
 	}
 
-	private final void registerWebAction(Object webHandler, Method m, WebAction webAction) throws Exception {
+	private final void registerWebAction(Object webHandler, Method m, WebActionHandler webAction) throws Exception {
 
 		String actionName = webAction.name();
 		// if the action does have an empty name, then, take the name of the
@@ -416,7 +416,7 @@ public class WebModule {
 			actionName = m.getName();
 		}
 		// try to get the actionObjectList from the actionDic
-		WebActionRef actionRef = webActionDic.get(actionName);
+		WebActionHandlerRef actionRef = webActionDic.get(actionName);
 		// if the WebActionRef already exist, throw an exception
 		if (actionRef != null) {
 			// AlertHandler.systemSevere(Alert.ACTION_NAME_ALREADY_EXIST,
@@ -427,11 +427,11 @@ public class WebModule {
 		// System.out.println("WebModule.registerWebAction: " + getName() + ":"
 		// + actionName);
 		// add this object and method to the list
-		webActionDic.put(actionName, new WebActionRef(webHandler, m, webAction));
+		webActionDic.put(actionName, new WebActionHandlerRef(webHandler, m, webAction));
 	}
 
-	private final void registerWebFile(Object webHandler, Method m, WebFile webFile) {
-		WebFileRef webFileRef = new WebFileRef(webHandler, m, webFile);
+	private final void registerWebFile(Object webHandler, Method m, WebFileHandler webFile) {
+		WebFileHandlerRef webFileRef = new WebFileHandlerRef(webHandler, m, webFile);
 		webFileList.add(webFileRef);
 	}
 	
@@ -443,7 +443,7 @@ public class WebModule {
 	
 
 	private final void registerWebTemplateDirective(Object webHandler, Method m,
-			WebTemplateDirective webTemplateDirective) throws Exception {
+			WebTemplateDirectiveHandler webTemplateDirective) throws Exception {
 		String templateMethodName = webTemplateDirective.name();
 		// if the action does have an empty name, then, take the name of the
 		// method
@@ -451,7 +451,7 @@ public class WebModule {
 			templateMethodName = m.getName();
 		}
 
-		WebTemplateDirectiveRef directiveRef = new WebTemplateDirectiveRef(webHandler, m);
+		WebTemplateDirectiveHandlerRef directiveRef = new WebTemplateDirectiveHandlerRef(webHandler, m);
 		TemplateDirectiveProxy directiveProxy = new TemplateDirectiveProxy(templateMethodName, directiveRef);
 		templateDirectiveProxyList.add(directiveProxy);
 	}
