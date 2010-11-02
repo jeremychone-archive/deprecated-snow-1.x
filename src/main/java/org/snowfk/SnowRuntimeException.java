@@ -11,7 +11,9 @@ public class SnowRuntimeException extends RuntimeException {
 
     private static final long serialVersionUID = 6761082312332003153L;
 
-    private Enum              causeEnum;
+    private Enum              errorEnum;
+
+    private Object            errorData;
 
     private Object[]          nameAndValueArray;
 
@@ -21,25 +23,50 @@ public class SnowRuntimeException extends RuntimeException {
         super(cause);
     }
 
-    public SnowRuntimeException(Enum causeEnum, Throwable cause, Object... nameAndValueArray) {
-        super(causeEnum.name(), cause);
-        this.causeEnum = causeEnum;
+    public SnowRuntimeException(Enum errorEnum, Throwable cause, Object... nameAndValueArray) {
+        super(errorEnum.name(), cause);
+        this.errorEnum = errorEnum;
         this.nameAndValueArray = nameAndValueArray;
     }
 
     public SnowRuntimeException(Enum causeEnum, Object... nameAndValueArray) {
         super(causeEnum.name());
-        this.causeEnum = causeEnum;
+        this.errorEnum = causeEnum;
         this.nameAndValueArray = nameAndValueArray;
+    }
+
+    public SnowRuntimeException(Enum errorEnum, Object errorData) {
+        super(errorEnum.name());
+        this.errorData = errorData;
+    }
+    
+
+    public SnowRuntimeException setErrorData(Object errorData) {
+        this.errorData = errorData;
+        return this;
+    }
+    
+    public Object getErrorData(){
+        return this.errorData;
+    }
+
+    public String getErrorCode() {
+        if (errorEnum != null) {
+            return errorEnum.getClass().getSimpleName() + "." + errorEnum.name();
+        } else if (getCause() != null) {
+            return getCause().getClass().getSimpleName();
+        } else {
+            return "";
+        }
     }
 
     @Override
     public String getMessage() {
 
-        if (causeEnum != null) {
+        if (errorEnum != null) {
             StringBuilder sb = null;
 
-            sb = new StringBuilder(causeEnum.name());
+            sb = new StringBuilder(errorEnum.name());
             if (nameAndValueArray != null) {
                 sb.append("  {");
                 Map m = MapUtil.mapIt(nameAndValueArray);
@@ -58,9 +85,9 @@ public class SnowRuntimeException extends RuntimeException {
                 sb.append('}');
             }
             return sb.toString();
-        } else if (usefulCause != null){
+        } else if (usefulCause != null) {
             return usefulCause.getMessage();
-        }else {
+        } else {
             return super.getMessage();
         }
     }
