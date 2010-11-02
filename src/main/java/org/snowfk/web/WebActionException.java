@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.snowfk.util.MapUtil;
 
+// DEPRECATED
 public class WebActionException extends RuntimeException {
     private static final long serialVersionUID = 310867550571525604L;
 
@@ -15,7 +16,7 @@ public class WebActionException extends RuntimeException {
 
     Object[]                  treeMapArgs;
 
-    //On Demand
+    // On Demand
     Map<String, Object>       data;
     String                    message;
 
@@ -60,7 +61,7 @@ public class WebActionException extends RuntimeException {
                         }
                     }
                 }
-            }else if (throwable != null){
+            } else if (throwable != null) {
                 sb.append(throwable.getMessage());
             }
             message = sb.toString();

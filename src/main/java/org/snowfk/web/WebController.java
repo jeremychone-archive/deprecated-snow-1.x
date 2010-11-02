@@ -151,7 +151,7 @@ public class WebController {
                         }
                         // TODO Need to handle exception
                         logger.error(getLogErrorString(e));
-                        webActionResponse = new WebActionResponse(new WebActionException(e));
+                        webActionResponse = new WebActionResponse(e);
                     }
                     rc.setWebActionResponse(webActionResponse);
                 }
