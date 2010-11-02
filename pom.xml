@@ -4,7 +4,7 @@
   <groupId>org.snowfk</groupId>
   <artifactId>snow</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <name>snow</name>
   <url>http://maven.apache.org</url>
   
