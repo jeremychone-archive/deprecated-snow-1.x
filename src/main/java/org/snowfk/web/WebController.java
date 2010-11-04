@@ -181,7 +181,6 @@ public class WebController {
             // --------- /Check if we have a CustomFrameProvider --------- //
 
             String pathInfo = rc.getPathInfo();
-            // 1) first check if it is a partsCache
 
             if (HttpPriResolver.isTemplateContent(pathInfo) || HttpPriResolver.isJsonContent(pathInfo)) {
                 Part part = webApplication.getPart(pagePri, framePri);

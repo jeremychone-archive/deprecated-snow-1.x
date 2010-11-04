@@ -23,7 +23,7 @@ public class HttpPriResolver {
     static final private String FRAME_DEFAULT_EMPTY = "/frame-empty";
 
 
-    static final private String HOME_PAGE_NAME_DEFAULT       = "home";
+    static final private String INDEX_PAGE_NAME_DEFAULT       = "index";
 
     
     
@@ -134,8 +134,14 @@ public class HttpPriResolver {
             pagePriPath = new StringBuilder(pagePriPath.substring(0, lastSlashIdx +1)).append(pageName).toString();
         }
         
-        if (pagePriPath.equals("/")){
-            pagePriPath += HOME_PAGE_NAME_DEFAULT;
+        //if it ends with .ftl, then remove it
+        if (pagePriPath.endsWith(".ftl")){
+            pagePriPath = pagePriPath.substring(0, ".ftl".length());
+        }
+        
+        //if it ends with "/" then add the INDEX page name
+        if (pagePriPath.endsWith("/")){
+            pagePriPath += INDEX_PAGE_NAME_DEFAULT;
         }
 
         
