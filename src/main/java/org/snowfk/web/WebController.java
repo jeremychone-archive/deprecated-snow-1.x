@@ -5,6 +5,7 @@ package org.snowfk.web;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.OutputStream;
@@ -43,8 +44,8 @@ import com.google.inject.internal.Nullable;
 
 @Singleton
 public class WebController {
-    static private Logger logger = LoggerFactory.getLogger(WebController.class);
-    
+    static private Logger               logger                      = LoggerFactory.getLogger(WebController.class);
+
     private static final String         CHAR_ENCODING               = "UTF-8";
     private static final String         MODEL_KEY_REQUEST           = "r";
     public static int                   BUFFER_SIZE                 = 2048 * 2;
@@ -55,8 +56,6 @@ public class WebController {
     private ServletContext              servletContext;
     private HibernateHandler            hibernateHandler;
     private PartCacheManager            partCacheManager;
-    
-    
 
     private ThreadLocal<RequestContext> requestContextTl            = new ThreadLocal<RequestContext>();
 
@@ -70,7 +69,7 @@ public class WebController {
 
     @Inject
     public WebController(WebApplication webApplication, @Nullable ServletContext servletContext,
-                         @Nullable HibernateHandler hibernateHandler, PartCacheManager partCacheManager) {
+                            @Nullable HibernateHandler hibernateHandler, PartCacheManager partCacheManager) {
 
         this.webApplication = webApplication;
         this.servletContext = servletContext;
@@ -125,13 +124,13 @@ public class WebController {
             // --------- /Auth --------- //
 
             // --------- RequestLifeCycle Start --------- //
-            for (WebModule webModule : webApplication.getWebModules()){
+            for (WebModule webModule : webApplication.getWebModules()) {
                 RequestLifeCycle rlc = webModule.getRequestLifeCycle();
-                if (rlc != null){
+                if (rlc != null) {
                     rlc.start(rc);
                 }
             }
-            // --------- /RequestLifeCycle Start --------- //            
+            // --------- /RequestLifeCycle Start --------- //
 
             // --------- Processing the Post (if any) --------- //
 
@@ -146,7 +145,7 @@ public class WebController {
                         webActionResponse = webApplication.processWebAction(ari, rc);
 
                     } catch (Throwable e) {
-                        if (e instanceof InvocationTargetException){
+                        if (e instanceof InvocationTargetException) {
                             e = e.getCause();
                         }
                         // TODO Need to handle exception
@@ -181,48 +180,68 @@ public class WebController {
             // --------- /Check if we have a CustomFrameProvider --------- //
 
             String pathInfo = rc.getPathInfo();
+            Part part = webApplication.getPart(pagePri, framePri);
 
             if (HttpPriResolver.isTemplateContent(pathInfo) || HttpPriResolver.isJsonContent(pathInfo)) {
-                Part part = webApplication.getPart(pagePri, framePri);
                 serviceTemplateOrJson(part, rc);
-
             } else {
 
-                //// if the content is cache (could be the result of a [@links...) then just include the content
+                // // if the content is cache (could be the result of a [@links...) then just include the content
+                // FIXME: we should depracate this ASAP. This is a bad way to do concatenation. Does not work on
+                // round-robin
+                // String contextPath = request.getContextPath();
+                // String href = new StringBuilder(contextPath).append(pathInfo).toString();
+                // String content = partCacheManager.getContentForHref(href);
                 String contextPath = request.getContextPath();
                 String href = new StringBuilder(contextPath).append(pathInfo).toString();
-                String content = partCacheManager.getContentForHref(href);
+                String pri = part.getPri();
+                String[] priPathAndExt = FileUtil.getFileNameAndExtension(pri);
+                
+                String content = null;
+                
+                if (priPathAndExt[0].endsWith(HttpPriResolver.WEB_BUNDLE_ALL_PREFIX) && (priPathAndExt[1].equalsIgnoreCase(".js") || priPathAndExt[1].equalsIgnoreCase(".css"))) {
+                    String fileExt = priPathAndExt[1];
+                    File folder = part.getResourceFile().getParentFile();
+                    if (folder.exists()) {
+                        StringBuilder contentSB = new StringBuilder();
+                        for (File file : folder.listFiles()) {
+                            if (!file.isDirectory() && file.getName().endsWith(fileExt)) {
+                                contentSB.append(FileUtil.getFileContentAsString(file));
+                            }
+                        }
+                        content = contentSB.toString();
+                    }
+                }
 
                 if (content != null) {
                     serviceStatic(rc.getRes(), href, content, null);
                 }
-                //// Otherwise, service the part
+                // // Otherwise, service the part
                 else {
-                    Part part = webApplication.getPart(pagePri, framePri);
                     serviceStatic(part, rc);
                 }
             }
 
         } catch (Throwable e) {
-            if (e instanceof InvocationTargetException){
+            if (e instanceof InvocationTargetException) {
                 e = e.getCause();
             }
 
-            logger.error(getLogErrorString(e));            
+            logger.error(getLogErrorString(e));
         } finally {
             // --------- RequestLifeCycle end --------- //
-            for (WebModule webModule : webApplication.getWebModules()){
+            for (WebModule webModule : webApplication.getWebModules()) {
                 RequestLifeCycle rlc = webModule.getRequestLifeCycle();
-                if (rlc != null){
+                if (rlc != null) {
                     rlc.end(rc);
                 }
             }
-            // --------- /RequestLifeCycle end --------- //   
-            
-            // Remove the requestContext from the threadLocal 
-            // NOTE: might want to do that after the closeSessionInView. 
+            // --------- /RequestLifeCycle end --------- //
+
+            // Remove the requestContext from the threadLocal
+            // NOTE: might want to do that after the closeSessionInView.
             requestContextTl.remove();
-            
+
             // --------- /Close HibernateSession --------- //
             if (hibernateHandler != null) {
                 hibernateHandler.closeSessionInView();
@@ -264,9 +283,9 @@ public class WebController {
 
     public void serviceStatic(Part part, RequestContext rc) throws Exception {
         rc.setCurrentPart(part);
-        //first, try to process the part with the WebFile
+        // first, try to process the part with the WebFile
         boolean webFilePart = webApplication.processWebFilePart(part, rc);
-        //if it was not processed by a webFile, then, do the standard process.
+        // if it was not processed by a webFile, then, do the standard process.
         if (!webFilePart) {
             HttpServletResponse res = rc.getRes();
 
@@ -286,9 +305,9 @@ public class WebController {
         // SystemOutUtil.printValue("RouterServlet serviceStatic pri", pri + " > " + part.getPri());
 
         String contentType = servletContext.getMimeType(fullPath);
-        //if the servletContext (server) could not fine the mimeType, then, give a little help
-        if (contentType == null){
-        	contentType = FileUtil.getExtraMimeType(fullPath);
+        // if the servletContext (server) could not fine the mimeType, then, give a little help
+        if (contentType == null) {
+            contentType = FileUtil.getExtraMimeType(fullPath);
         }
         // long contentLength = -1L;
         int realLength = 0;
@@ -298,12 +317,10 @@ public class WebController {
         // TODO: need to fix this with something more generic
         if (isCachable(fullPath)) {
             /*
-             * NOTE: for now we remove this, in the case of a CSS, we do not
-             * know the length, since it is a template contentLength =
-             * resourceFile.length();
+             * NOTE: for now we remove this, in the case of a CSS, we do not know the length, since it is a template
+             * contentLength = resourceFile.length();
              * 
-             * if (contentLength < Integer.MAX_VALUE) {
-             * res.setContentLength((int) contentLength); } else {
+             * if (contentLength < Integer.MAX_VALUE) { res.setContentLength((int) contentLength); } else {
              * res.setHeader("content-length", "" + contentLength); }
              */
             // This content will expire in 1 hours.
@@ -388,8 +405,8 @@ public class WebController {
         String ext = FileUtil.getFileNameAndExtension(pathInfo)[1];
         return cachableExtension.contains(ext);
     }
-    
-    static final private String getLogErrorString(Throwable e){
+
+    static final private String getLogErrorString(Throwable e) {
         StringBuilder errorSB = new StringBuilder();
         errorSB.append(e.getMessage());
         StringWriter sw = new StringWriter();
