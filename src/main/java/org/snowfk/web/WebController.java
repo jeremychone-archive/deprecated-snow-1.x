@@ -5,7 +5,6 @@ package org.snowfk.web;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.OutputStream;
@@ -55,7 +54,6 @@ public class WebController {
     private ServletFileUpload           fileUploader;
     private ServletContext              servletContext;
     private HibernateHandler            hibernateHandler;
-    private PartCacheManager            partCacheManager;
 
     private ThreadLocal<RequestContext> requestContextTl            = new ThreadLocal<RequestContext>();
 
@@ -74,7 +72,6 @@ public class WebController {
         this.webApplication = webApplication;
         this.servletContext = servletContext;
         this.hibernateHandler = hibernateHandler;
-        this.partCacheManager = partCacheManager;
 
     }
 
@@ -196,18 +193,16 @@ public class WebController {
                 String href = new StringBuilder(contextPath).append(pathInfo).toString();
                 String pri = part.getPri();
                 String[] priPathAndExt = FileUtil.getFileNameAndExtension(pri);
-                
+
                 String content = null;
-                
+
                 if (priPathAndExt[0].endsWith(HttpPriResolver.WEB_BUNDLE_ALL_PREFIX) && (priPathAndExt[1].equalsIgnoreCase(".js") || priPathAndExt[1].equalsIgnoreCase(".css"))) {
                     String fileExt = priPathAndExt[1];
                     File folder = part.getResourceFile().getParentFile();
                     if (folder.exists()) {
                         StringBuilder contentSB = new StringBuilder();
-                        for (File file : folder.listFiles()) {
-                            if (!file.isDirectory() && file.getName().endsWith(fileExt)) {
-                                contentSB.append(FileUtil.getFileContentAsString(file));
-                            }
+                        for (File file : FileUtil.getFiles(folder, fileExt)) {
+                            contentSB.append(FileUtil.getFileContentAsString(file));
                         }
                         content = contentSB.toString();
                     }

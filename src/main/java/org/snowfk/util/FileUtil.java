@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,8 +19,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -47,6 +52,43 @@ public class FileUtil {
 		}
 	}
 
+	
+	/**
+	 * Return the list of Files for this Folder for the given extensions. <br />
+	 * Note 1: The list will be ordered by name via Java to make it consistent across file systems. <br />
+	 * Note 2: The extensions are case-insensitive.
+	 *  
+	 * @param folder
+	 * @param extensions 
+	 */
+	public static File[] getFiles(File folder,String... extensions){
+	    final Set<String> exts = new HashSet<String>();
+	    for (String ext : extensions){
+	        exts.add(ext.toLowerCase());
+	    }
+	    
+	    File[] files = folder.listFiles(new FilenameFilter(){
+            @Override
+            public boolean accept(File file, String name) {
+                String ext = getFileNameAndExtension(name)[1];
+                return exts.contains(ext.toLowerCase());
+            }
+	    });
+	    
+	    Arrays.sort(files, new Comparator<File>() {
+
+            @Override
+            public int compare(File f1, File f2) {
+                // TODO Auto-generated method stub
+                return f1.getName().compareTo(f2.getName());
+            }
+
+        });
+	    
+	    return files;
+	}
+	
+	
 	/**
 	 * Write a full string to a file. Use PrintWriter and BufferedReader
 	 * 
