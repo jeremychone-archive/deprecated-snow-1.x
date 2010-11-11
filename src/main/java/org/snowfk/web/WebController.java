@@ -203,6 +203,7 @@ public class WebController {
                         StringBuilder contentSB = new StringBuilder();
                         for (File file : FileUtil.getFiles(folder, fileExt)) {
                             contentSB.append(FileUtil.getFileContentAsString(file));
+                            contentSB.append("\n");
                         }
                         content = contentSB.toString();
                     }

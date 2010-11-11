@@ -3,33 +3,32 @@
  */
 package org.snowfk.web.part;
 
-
 import org.snowfk.web.part.Part.Type;
-
-
-
 
 public class PriUtil {
 
-    public static Part.Type getPartType(String pri){
-        String typeStr = pri.substring(0,pri.indexOf(':'));
-        for (Part.Type type : Part.Type.values()) {
-            if (typeStr.equals(type.name())) {
-                return type;
+    public static Part.Type getPartType(String pri) {
+        int idx = pri.indexOf(':');
+        if (idx > -1) {
+            String typeStr = pri.substring(0, idx);
+            for (Part.Type type : Part.Type.values()) {
+                if (typeStr.equals(type.name())) {
+                    return type;
+                }
             }
         }
         return null;
     }
-    
+
     public static String getModuleNameFromPri(String pri) {
-        if (pri != null){
-        String[] result = pri.split(":");
-        return result[1];
-        }else{
+        if (pri != null && pri.indexOf(':') > -1) {
+            String[] result = pri.split(":");
+            return result[1];
+        } else {
             return null;
         }
     }
-    
+
     /**
      * @param pri
      * @return the path for this pri (the string after the last ':')
@@ -40,10 +39,14 @@ public class PriUtil {
         if (idxOf != -1 && pri.length() > idxOf) {
             path = pri.substring(idxOf + 1);
         }
+        //otherwise, the pri is the just path
+        else{
+            path = pri;
+        }
         return path;
-        
+
     }
-    
+
     /**
      * @param pri
      * @param newPath
@@ -63,27 +66,23 @@ public class PriUtil {
             return pri;
         }
     }
-    
-    
-    public static String getRelativePartFilePath(String pri){
+
+    public static String getRelativePartFilePath(String pri) {
         Type partType = PriUtil.getPartType(pri);
         String path = PriUtil.getPathFromPri(pri);
-        
+
         String ext = null;
-        
-        //if there is no extension and the lastChar is not a '/', then, add the defaultExt
-        char lastChar = path.charAt(path.length()-1);
+
+        // if there is no extension and the lastChar is not a '/', then, add the defaultExt
+        char lastChar = path.charAt(path.length() - 1);
         int idxOfExt = path.lastIndexOf('.');
-        
 
         if (idxOfExt == -1 && lastChar != '/') {
             ext = partType.defaultExt();
             return new StringBuilder(path).append(ext).toString();
-        }else{
+        } else {
             return path;
         }
     }
-    
-    
 
 }

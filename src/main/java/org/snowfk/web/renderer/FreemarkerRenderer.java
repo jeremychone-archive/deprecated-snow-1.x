@@ -22,6 +22,7 @@ import org.snowfk.web.renderer.freemarker.IncludeFrameContentTemplateDirective;
 import org.snowfk.web.renderer.freemarker.IncludeTemplateDirective;
 import org.snowfk.web.renderer.freemarker.LinksDirective;
 import org.snowfk.web.renderer.freemarker.MaxTemplateMethod;
+import org.snowfk.web.renderer.freemarker.ParseJsonTemplateMethod;
 import org.snowfk.web.renderer.freemarker.PathInfoMatcherTemplateMethod;
 import org.snowfk.web.renderer.freemarker.SetHrefParam;
 import org.snowfk.web.renderer.freemarker.TemplateDirectiveProxy;
@@ -55,6 +56,8 @@ public class FreemarkerRenderer implements Renderer {
     private HrefPartTemplateMethod               hrefPartTemplateMethod;
     private WebApplication                       webApplication;
 
+    private ParseJsonTemplateMethod parseJsonTemplateMethod;
+
     @Inject
     public FreemarkerRenderer(@Named("snow.snowFolder") File snowFolder, WebApplication webApplication) {
         this.sfkFolder = snowFolder;
@@ -65,12 +68,13 @@ public class FreemarkerRenderer implements Renderer {
     public void injectDirectives(IncludeTemplateDirective includeTemplateDirective,
                             IncludeFrameContentTemplateDirective includeFrameContentTemplateDirective,
                             LinksDirective linksDirective, MaxTemplateMethod maxTemplateMethod,
-                            HrefPartTemplateMethod hrefPartTemplateMethod) {
+                            HrefPartTemplateMethod hrefPartTemplateMethod,ParseJsonTemplateMethod parseJsonTemplateMethod) {
         this.includeTemplateDirective = includeTemplateDirective;
         this.includeFrameContentTemplateDirective = includeFrameContentTemplateDirective;
         this.linksDirective = linksDirective;
         this.maxTemplateMethod = maxTemplateMethod;
         this.hrefPartTemplateMethod = hrefPartTemplateMethod;
+        this.parseJsonTemplateMethod = parseJsonTemplateMethod;
     }
 
     public void init() {
@@ -130,6 +134,8 @@ public class FreemarkerRenderer implements Renderer {
         conf.setSharedVariable("max", maxTemplateMethod);
 
         conf.setSharedVariable("hrefPart", hrefPartTemplateMethod);
+        
+        conf.setSharedVariable("parseJson",parseJsonTemplateMethod);
 
         conf.setSharedVariable("setHrefParam", new SetHrefParam());
 

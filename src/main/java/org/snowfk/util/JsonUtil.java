@@ -3,8 +3,13 @@
  */
 package org.snowfk.util;
 
+
+import java.util.Map;
+
+import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import net.sf.json.JsonConfig;
+import net.sf.json.util.CycleDetectionStrategy;
 
 public class JsonUtil {
 
@@ -17,7 +22,7 @@ public class JsonUtil {
         if (excludes != null) {
             c.setExcludes(excludes);
         }
-        
+        c.setCycleDetectionStrategy(CycleDetectionStrategy.LENIENT);
         Object jsObj = JSONSerializer.toJSON(obj, c);
         
         String result = jsObj.toString();
@@ -25,4 +30,17 @@ public class JsonUtil {
 
         return result;
     }
+    
+    public static Map toMapAndList(String json){
+        
+        //JSONSerializer.toJava(json)
+        
+        JSONObject jsonObject = JSONObject.fromObject( json );
+        
+        // 2010-11-09: Not sure how to use the JSONObject to create only Map and List
+        //             so, doing is by hand right now.
+        
+        return jsonObject;
+    }
+   
 }
