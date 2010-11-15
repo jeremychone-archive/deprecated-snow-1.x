@@ -284,7 +284,7 @@ public class HibernateDaoHelperImpl implements HibernateDaoHelper {
 
             return rs;
         } catch (Exception e) {
-            throw new SnowRuntimeException(e);
+            throw new SnowHibernateException(e);
         }
     }
 

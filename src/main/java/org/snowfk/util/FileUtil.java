@@ -6,6 +6,7 @@ package org.snowfk.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -66,19 +67,33 @@ public class FileUtil {
 	    for (String ext : extensions){
 	        exts.add(ext.toLowerCase());
 	    }
-	    
-	    File[] files = folder.listFiles(new FilenameFilter(){
+	    File[] files = folder.listFiles(new FileFilter(){
+
             @Override
-            public boolean accept(File file, String name) {
-                //make sure it is not a directory
+            public boolean accept(File file) {
                 if (file.isDirectory()){
                     return false;
                 }
+                String name = file.getName();
+                String ext = getFileNameAndExtension(name)[1];
+                return exts.contains(ext.toLowerCase());
+            }
+	        
+	    });
+	    /*
+	    File[] files = folder.listFiles(new FilenameFilter(){
+            @Override
+            public boolean accept(File file, String name) {
+                System.out.println("File: " + file + " - File name: " + name);
+                //make sure it is not a directory
+                //if (file.isDirectory()){
+                //    return false;
+                //}
                 //check the extension
                 String ext = getFileNameAndExtension(name)[1];
                 return exts.contains(ext.toLowerCase());
             }
-	    });
+	    });*/
 	    
 	    Arrays.sort(files, new Comparator<File>() {
 

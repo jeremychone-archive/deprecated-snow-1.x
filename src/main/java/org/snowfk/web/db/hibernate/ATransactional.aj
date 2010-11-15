@@ -68,17 +68,24 @@ public aspect ATransactional {
         } catch (Throwable t) {
             
             t.printStackTrace();
-            SnowHibernateException she = new SnowHibernateException(t);
+            //SnowHibernateException she = new SnowHibernateException(t);
             System.out.flush();
             //System.out.println("SnowHibernateException message: " + she.getMessage());
-            logger.error("SnowHibernateException message: " + she.getMessage());
+           
             //// if this call had begun the transaction, then 
             //   do a rollback on exception
             if (sessionHolder != null && txOwner) {
                 sessionHolder.rollbackTransaction();
-                logger.error("SnowHibernateException message: " + she.getMessage());
+                if (t instanceof SnowHibernateException)
+                logger.error("SnowHibernateException message: " + t.getMessage());
             }
-            throw new SnowHibernateException(she);
+            
+            //Since we do not require the @Transactional methods to throws exception, we must throw runtime exception.
+            if (t instanceof RuntimeException){
+                throw ((RuntimeException)t);
+            }else{
+                throw new RuntimeException(t);
+            }
         }
         
         
