@@ -35,6 +35,7 @@ import org.snowfk.web.part.CustomFramePriPath;
 import org.snowfk.web.part.Part;
 import org.snowfk.web.part.HttpPriResolver;
 import org.snowfk.web.part.PriUtil;
+import org.snowfk.web.renderer.WebBundleManager;
 import org.snowfk.web.renderer.freemarker.PartCacheManager;
 
 import com.google.inject.Inject;
@@ -54,6 +55,7 @@ public class WebController {
     private ServletFileUpload           fileUploader;
     private ServletContext              servletContext;
     private HibernateHandler            hibernateHandler;
+    private WebBundleManager            webBundleManager;
 
     private ThreadLocal<RequestContext> requestContextTl            = new ThreadLocal<RequestContext>();
 
@@ -67,11 +69,13 @@ public class WebController {
 
     @Inject
     public WebController(WebApplication webApplication, @Nullable ServletContext servletContext,
-                            @Nullable HibernateHandler hibernateHandler, PartCacheManager partCacheManager) {
+                            @Nullable HibernateHandler hibernateHandler, PartCacheManager partCacheManager,
+                            WebBundleManager webBundleManager) {
 
         this.webApplication = webApplication;
         this.servletContext = servletContext;
         this.hibernateHandler = hibernateHandler;
+        this.webBundleManager = webBundleManager;
 
     }
 
@@ -191,23 +195,13 @@ public class WebController {
                 // String content = partCacheManager.getContentForHref(href);
                 String contextPath = request.getContextPath();
                 String href = new StringBuilder(contextPath).append(pathInfo).toString();
-                String pri = part.getPri();
-                String[] priPathAndExt = FileUtil.getFileNameAndExtension(pri);
 
                 String content = null;
 
-                if (priPathAndExt[0].endsWith(HttpPriResolver.WEB_BUNDLE_ALL_PREFIX) && (priPathAndExt[1].equalsIgnoreCase(".js") || priPathAndExt[1].equalsIgnoreCase(".css"))) {
-                    String fileExt = priPathAndExt[1];
-                    File folder = part.getResourceFile().getParentFile();
-                    if (folder.exists()) {
-                        StringBuilder contentSB = new StringBuilder();
-                        for (File file : FileUtil.getFiles(folder, fileExt)) {
-                            contentSB.append(FileUtil.getFileContentAsString(file));
-                            contentSB.append("\n");
-                        }
-                        content = contentSB.toString();
-                    }
+                if (webBundleManager.isWebBundlePart(part)){
+                    content = webBundleManager.getContent(part);
                 }
+                
 
                 if (content != null) {
                     serviceStatic(rc.getRes(), href, content, null);

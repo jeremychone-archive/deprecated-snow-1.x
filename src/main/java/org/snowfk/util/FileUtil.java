@@ -54,7 +54,7 @@ public class FileUtil {
 
 	
 	/**
-	 * Return the list of Files for this Folder for the given extensions. <br />
+	 * Return the list of Files (excluding folders) for this Folder for the given extensions. <br />
 	 * Note 1: The list will be ordered by name via Java to make it consistent across file systems. <br />
 	 * Note 2: The extensions are case-insensitive.
 	 *  
@@ -70,6 +70,11 @@ public class FileUtil {
 	    File[] files = folder.listFiles(new FilenameFilter(){
             @Override
             public boolean accept(File file, String name) {
+                //make sure it is not a directory
+                if (file.isDirectory()){
+                    return false;
+                }
+                //check the extension
                 String ext = getFileNameAndExtension(name)[1];
                 return exts.contains(ext.toLowerCase());
             }
