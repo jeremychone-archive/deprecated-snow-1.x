@@ -12,7 +12,6 @@ import com.google.inject.Singleton;
 
 @Singleton
 public class WebBundleManager {
-
     /**
      * Tells if a part is a reference to a WebBundler part. <br />
      * Note: as of now, we only support "web_bundle_all"
@@ -66,18 +65,19 @@ public class WebBundleManager {
      * @return
      */
     public List<File> getWebBundleFiles(Part webBundlePart) {
-        List<File> files = null;
-
         String fileExt = getFileExt(webBundlePart);
         File folder = webBundlePart.getResourceFile().getParentFile();
-
+        return getWebBundleFiles(folder,fileExt);
+    }
+    
+    public List<File> getWebBundleFiles(File folder, String fileExt){
+        List<File> files = null;
         File[] allFiles = FileUtil.getFiles(folder, fileExt);
 
         //TODO: look at the "all.bundle" file for custom inclusion/ordering
-        
         files = Arrays.asList(allFiles);
 
-        return files;
+        return files;        
     }
 
     private String getFileExt(Part webBundlePart) {

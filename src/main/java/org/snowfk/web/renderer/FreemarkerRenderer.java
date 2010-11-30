@@ -26,6 +26,7 @@ import org.snowfk.web.renderer.freemarker.ParseJsonTemplateMethod;
 import org.snowfk.web.renderer.freemarker.PathInfoMatcherTemplateMethod;
 import org.snowfk.web.renderer.freemarker.SetHrefParam;
 import org.snowfk.web.renderer.freemarker.TemplateDirectiveProxy;
+import org.snowfk.web.renderer.freemarker.WebBundleDirective;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -58,6 +59,8 @@ public class FreemarkerRenderer implements Renderer {
 
     private ParseJsonTemplateMethod parseJsonTemplateMethod;
 
+    private WebBundleDirective webBundleDirective;
+
     @Inject
     public FreemarkerRenderer(@Named("snow.snowFolder") File snowFolder, WebApplication webApplication) {
         this.sfkFolder = snowFolder;
@@ -67,7 +70,7 @@ public class FreemarkerRenderer implements Renderer {
     @Inject
     public void injectDirectives(IncludeTemplateDirective includeTemplateDirective,
                             IncludeFrameContentTemplateDirective includeFrameContentTemplateDirective,
-                            LinksDirective linksDirective, MaxTemplateMethod maxTemplateMethod,
+                            LinksDirective linksDirective,WebBundleDirective webBundleDirective, MaxTemplateMethod maxTemplateMethod,
                             HrefPartTemplateMethod hrefPartTemplateMethod,ParseJsonTemplateMethod parseJsonTemplateMethod) {
         this.includeTemplateDirective = includeTemplateDirective;
         this.includeFrameContentTemplateDirective = includeFrameContentTemplateDirective;
@@ -75,6 +78,7 @@ public class FreemarkerRenderer implements Renderer {
         this.maxTemplateMethod = maxTemplateMethod;
         this.hrefPartTemplateMethod = hrefPartTemplateMethod;
         this.parseJsonTemplateMethod = parseJsonTemplateMethod;
+        this.webBundleDirective = webBundleDirective;
     }
 
     public void init() {
@@ -129,7 +133,10 @@ public class FreemarkerRenderer implements Renderer {
         
         conf.setSharedVariable("includeFrameContent", includeFrameContentTemplateDirective);
 
+        // TODO: this needs to be deprecated
         conf.setSharedVariable("links", linksDirective);
+        
+        conf.setSharedVariable("webBundle",webBundleDirective);
 
         conf.setSharedVariable("max", maxTemplateMethod);
 
