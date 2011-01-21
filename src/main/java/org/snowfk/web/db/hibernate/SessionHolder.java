@@ -35,9 +35,11 @@ public class SessionHolder {
     //created on demand
     private Session        txSession; //so far not used
     private boolean        txOpen = false;
+    private FlushMode      flushMode;
 
-    public SessionHolder(SessionFactory sessionFactory) {
+    public SessionHolder(SessionFactory sessionFactory, FlushMode flushMode) {
         this.sessionFactory = sessionFactory;
+        this.flushMode = flushMode;
     }
 
     public void flush() {
@@ -125,7 +127,7 @@ public class SessionHolder {
     private Session getDefaultSession() {
         if (defaultSession == null) {
             defaultSession = sessionFactory.openSession();
-            defaultSession.setFlushMode(FlushMode.AUTO);
+            defaultSession.setFlushMode(flushMode);
         }
         return defaultSession;
     }

@@ -7,10 +7,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.hibernate.FlushMode;
 import org.hibernate.Interceptor;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.AnnotationConfiguration;
 import org.hibernate.cfg.NamingStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.snowfk.SnowRuntimeException;
 
 import com.google.inject.Singleton;
@@ -18,12 +21,15 @@ import com.google.inject.Singleton;
 @Singleton
 public class HibernateHandler {
 
+    static private Logger logger = LoggerFactory.getLogger(HibernateHandler.class);
+
     public enum Alert {
         ERROR_INITIALIZING_NAMING_STRATEGY_CLASS;
     }
 
     Map            properties;
     SessionFactory sessionFactory;
+    FlushMode      flushMode = FlushMode.AUTO;
 
     //use a set to avoid duplicate
     Set<Class>     entityClasses = new HashSet<Class>();
@@ -96,6 +102,16 @@ public class HibernateHandler {
 
         sessionFactory = cfg.buildSessionFactory();
 
+        String flushModeStr = (String) properties.get("snow.hibernate.flushMode");
+        if (flushModeStr != null) {
+            FlushMode flushMode = FlushMode.parse(flushModeStr.toUpperCase());
+            if(flushMode != null) {
+                this.flushMode = flushMode;
+            }
+            else {
+                logger.warn("unable to parse flush mode property value '" + flushModeStr + "'.  will default to " + flushMode);
+            }
+        }
     }
 
     /*--------- /Initialization Methods ---------*/
@@ -111,7 +127,7 @@ public class HibernateHandler {
         closeSessionInView();
 
         //get another session
-        SessionHolder sessionHolder = new SessionHolder(sessionFactory);
+        SessionHolder sessionHolder = new SessionHolder(sessionFactory, flushMode);
         SessionHolder.setThreadSessionHolder(sessionHolder);
     }
 
