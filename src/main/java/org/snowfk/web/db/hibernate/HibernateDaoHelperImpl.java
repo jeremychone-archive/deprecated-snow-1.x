@@ -12,7 +12,6 @@ import java.util.List;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.snowfk.SnowRuntimeException;
 
 import com.google.inject.Singleton;
 
@@ -32,7 +31,6 @@ public class HibernateDaoHelperImpl implements HibernateDaoHelper {
      * @see org.snowfk.web.db.hibernate.HibernateDaoHelper#get(java.lang.Class, java.io.Serializable)
      */
     @SuppressWarnings("unchecked")
-    @Transactional
     public <T> T get(Class<T> cls, Serializable id) {
         try {
             if (cls != null && id != null) {
@@ -155,7 +153,6 @@ public class HibernateDaoHelperImpl implements HibernateDaoHelper {
      * @see org.snowfk.web.db.hibernate.HibernateDaoHelper#find(int, int, java.lang.String, java.lang.Object[])
      */
     @SuppressWarnings("unchecked")
-    @Transactional
     public List<? extends Object> find(int pageIdx, int pageSize, String query, Object... values) {
         Session session = getSession();
         try {
@@ -176,7 +173,6 @@ public class HibernateDaoHelperImpl implements HibernateDaoHelper {
         }
     }
 
-    @Transactional
     public Integer executeHql(String query, Object... values) {
         if (query != null) {
             Session session = getSession();
