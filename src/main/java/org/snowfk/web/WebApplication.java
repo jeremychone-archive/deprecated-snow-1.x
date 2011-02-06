@@ -171,7 +171,7 @@ public class WebApplication {
         if (moduleName != null) {
             return webModuleByName.get(moduleName);
         } else {
-            return null;
+            return getDefaultWebModule();
         }
     }
 
