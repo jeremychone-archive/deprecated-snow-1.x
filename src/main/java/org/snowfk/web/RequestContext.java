@@ -677,11 +677,6 @@ public class RequestContext {
                 // first try the traditional way
                 pathInfo = req.getPathInfo();
 
-                // otherwise, try to get it from the attribute
-                if (pathInfo == null) {
-                    pathInfo = (String) req.getAttribute("pathInfo");
-                }
-
                 // otherwise build it from the requestURI
                 if (pathInfo == null) {
                     // remove the contextPath
@@ -693,7 +688,6 @@ public class RequestContext {
                         // TODO Auto-generated catch block
                         logger.error(e.getMessage());
                     }
-                    req.setAttribute("pathInfo", pathInfo);
                 }
             }
             //if there is not request, take the pri path as pathInfo

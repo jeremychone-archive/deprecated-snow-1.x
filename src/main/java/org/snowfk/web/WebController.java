@@ -7,6 +7,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -32,8 +33,8 @@ import org.snowfk.web.auth.AuthService;
 import org.snowfk.web.db.hibernate.HibernateHandler;
 import org.snowfk.web.part.ContextModelBuilder;
 import org.snowfk.web.part.CustomFramePriPath;
-import org.snowfk.web.part.Part;
 import org.snowfk.web.part.HttpPriResolver;
+import org.snowfk.web.part.Part;
 import org.snowfk.web.part.PriUtil;
 import org.snowfk.web.renderer.WebBundleManager;
 import org.snowfk.web.renderer.freemarker.PartCacheManager;
@@ -212,12 +213,28 @@ public class WebController {
                 }
             }
 
+        // this catch is for when this exception is thrown prior to entering the web handler method.
+        // (e.g. a WebHandlerMethodInterceptor).
+        } catch (AbortWithHttpStatusException e) {
+
+            sendHttpError(rc, e.getStatus(), e.getMessage());
+
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
                 e = e.getCause();
             }
 
-            logger.error(getLogErrorString(e));
+            // and now we have to double-handle this one b/c it will be propagated as an InvocationTargetException
+            // when it's thrown from within a web handler.
+            if(e instanceof AbortWithHttpStatusException) {
+                sendHttpError(rc, ((AbortWithHttpStatusException) e).getStatus(), e.getMessage());
+            }
+            else {
+                // and this is the normal case...
+                sendHttpError(rc, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+                logger.error(getLogErrorString(e));
+            }
+
         } finally {
             // --------- RequestLifeCycle end --------- //
             for (WebModule webModule : webApplication.getWebModules()) {
@@ -256,6 +273,12 @@ public class WebController {
         res.setContentType("text/html;charset=" + CHAR_ENCODING);
         // if not cachable, then, set the appropriate headers.
 
+        // check for a file not found condition.  if so, then we return control to the servlet container.
+        if(part.getFormatType() == Part.FormatType.freemarker && !webApplication.getPart(part.getPri()).getResourceFile().exists()) {
+            sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
+            return;
+        }
+
         res.setHeader("Pragma", "No-cache");
         res.setHeader("Cache-Control", "no-cache,no-store,max-age=0");
         res.setDateHeader("Expires", 1);
@@ -284,7 +307,7 @@ public class WebController {
             if (resourceFile.exists()) {
                 serviceStatic(res, resourceFullPath, null, resourceFile);
             } else {
-                res.sendError(404, "Page does not exists: " + rc.getPathInfo() + " : " + resourceFile.getAbsolutePath());
+                sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
             }
         }
     }
@@ -388,6 +411,19 @@ public class WebController {
         }
 
     }
+
+
+    private void sendHttpError(RequestContext rc, int errorCode, String message) throws IOException {
+
+        // if the response has already been committed, there's not much we can do about it at this point...just let it go.
+        // the one place where the response is likely to be committed already is if the exception causing the error
+        // originates while processing a template.  the template will usually have already output enough html so that
+        // the container has already started writing back to the client.
+        if(!rc.getRes().isCommitted()) {
+            rc.getRes().sendError(errorCode, message);
+        }
+    }
+
 
     static Set cachableExtension = MapUtil.setIt(".css", ".js", ".png", ".gif", ".jpeg");
 
