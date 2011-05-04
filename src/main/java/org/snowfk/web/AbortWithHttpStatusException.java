@@ -1,5 +1,6 @@
 package org.snowfk.web;
 
+@SuppressWarnings("serial")
 public class AbortWithHttpStatusException extends RuntimeException {
 
     private int status;

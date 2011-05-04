@@ -627,7 +627,7 @@ public class RequestContext {
      * @return
      */
     public <T> T getModelValue(String namePath, Class<T> cls, T defaultValue) {
-        return MapUtil.getTreeMapValue(webMap, namePath, cls, defaultValue);
+        return MapUtil.getNestedValue(webMap, namePath, cls, defaultValue);
     }
 
     public Map getRootModel() {

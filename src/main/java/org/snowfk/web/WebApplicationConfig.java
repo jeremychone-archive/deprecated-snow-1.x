@@ -11,6 +11,7 @@ import javax.servlet.ServletContext;
 
 import org.snowfk.util.MapUtil;
 import org.snowfk.web.db.hibernate.HibernateHandler;
+import org.snowfk.web.names.AppDir;
 import org.snowfk.web.names.CurrentRequestContext;
 import org.snowfk.web.names.ServletContextPath;
 import org.snowfk.web.part.PartResolver;
@@ -28,11 +29,13 @@ public class WebApplicationConfig extends AbstractModule {
 	private Properties appProperties;
 	private ServletContext servletContext;
 	private File sfkFolder;
+	private File appDir;
 
-	public WebApplicationConfig(Properties appProperties, File sfkFolder, ServletContext servletContext) {
+	public WebApplicationConfig(Properties appProperties, File sfkFolder,File appDir, ServletContext servletContext) {
 		this.appProperties = appProperties;
 		this.servletContext = servletContext;
 		this.sfkFolder = sfkFolder;
+		this.appDir = appDir;
 	}
 
 	@Override
@@ -55,6 +58,12 @@ public class WebApplicationConfig extends AbstractModule {
 	@Provides
 	public ServletContext providesServletContext() {
 		return servletContext;
+	}
+	
+	@AppDir
+	@Provides
+	public File providesAppDir(){
+		return appDir;
 	}
 
 	@ServletContextPath
@@ -88,6 +97,7 @@ public class WebApplicationConfig extends AbstractModule {
 	public PartResolver providesPartResolver(WebApplication webApplication) {
 		return webApplication.getPartResolver();
 	}
+	
 
 	@Named("snow.snowFolder")
 	@Provides

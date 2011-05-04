@@ -16,8 +16,42 @@ import java.util.Set;
 public class MapUtil {
 
 
+	// --------- Nested Map --------- //
 
-    public static <T> T getTreeMapValue(Map m, String namePath, Class<T> cls, T defaultValue) {
+	
+	
+	/**
+	 * Convenient method for the getNestedValue(Map m, String namePath, Class<T> cls, T defaultValue) with cls String.class and defaultValue = null
+	 * @param m the nested map
+	 * @param namePath the namePath (i.e. "product.name")
+	 */
+	public static String  getNestedValue(Map m, String namePath) {
+		return getNestedValue(m,namePath,String.class);
+	}
+	
+	/**
+	 * Convenient methods for the getNestedValue(Map m, String namePath, Class<T> cls, T defaultValue) with defaultValue == null
+	 * @param <T>
+	 * @param m
+	 * @param namePath
+	 * @param cls
+	 * @return
+	 */
+	public static <T> T getNestedValue(Map m, String namePath, Class<T> cls) {
+		return getNestedValue(m,namePath,cls,null);
+	}
+	
+	/**
+	 * Return the value given a namePath (i.e. "product.name") from a nested map. Return defaultValue if map, namePath, or value do not exist.
+	 * 
+	 * @param <T>
+	 * @param m the Map
+	 * @param namePath the namePath (i.e. "product.name")
+	 * @param cls the class to convert the value to
+	 * @param defaultValue the default value in case the map, namePath, or value do not exist
+	 * @return
+	 */
+	public static <T> T getNestedValue(Map m, String namePath, Class<T> cls, T defaultValue) {
         if (m != null && namePath != null) {
             String[] names = namePath.split("\\.");
             Map tmpMap = m;
@@ -44,11 +78,22 @@ public class MapUtil {
 
         }
 
-        return defaultValue;
+        return defaultValue;		
+	}
+	
+	@Deprecated
+    public static <T> T getTreeMapValue(Map m, String namePath, Class<T> cls, T defaultValue) {
+    	return getNestedValue(m,namePath,cls,defaultValue);
     }
+	
+	@Deprecated
+	 public static Map<String, Object> treeMapIt(Object... objs) {
+		return nestMapIt(objs);
+	}
+	// --------- /Nested Map --------- //
 
     /**
-     * Return a TreeMap of Object (HashMap) from an Array of objects (the '.'
+     * Return a nestedMap of Object (HashMap) from an Array of objects (the '.'
      * delimits sub map). first/odds elements are the key, even are the values.
      * If the array has an odd number of elements, then the last key/value will
      * have an null value;
@@ -57,7 +102,7 @@ public class MapUtil {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> treeMapIt(Object... objs) {
+    public static Map<String, Object> nestMapIt(Object... objs) {
         HashMap<String, Object> m = new HashMap<String, Object>();
 
         for (int i = 0; i < objs.length; i += 2) {

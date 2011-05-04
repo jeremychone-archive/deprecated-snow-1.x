@@ -27,18 +27,26 @@ public class SnowServlet extends HttpServlet {
     
     @Override
     public void init(ServletConfig config) throws ServletException {
+    	super.init(config);
         ServletContext servletContext = config.getServletContext();
-
+        
         try {
             File webInfFolder = new File(servletContext.getRealPath("WEB-INF/"));
             File snowFolder = new File(webInfFolder, "snow");
             
+
             
             WebApplicationLoader appLoader = new WebApplicationLoader(snowFolder, servletContext);
             String appName = appLoader.getWebAppFolder().getName();
             System.out.println("==== Snow Application : " + appName + " ===========");
             appLoader.load();
             System.out.println("loading... done");
+            
+            String appDir = servletContext.getInitParameter("appDir");
+            if (appDir != null){
+                System.out.println("appDir: " + appDir);
+            }
+            
             
             webController = appLoader.getWebController();
             webController.init();

@@ -102,7 +102,7 @@ public class WebApplicationLoader {
         if (propertiesFile.exists()) {
             appProperties.load(new FileReader(propertiesFile));
         } else {
-            logger.info("Now application.properties found in WEB-INF/snow/. Starting blank application.");
+            logger.info("No application.properties found in WEB-INF/snow/. Starting blank application.");
         }
 
         // second load the config.properties. If we have a
@@ -162,8 +162,6 @@ public class WebApplicationLoader {
                 }
             }
         }
-        // System.out.println("Loading config from JNDI location: " +
-        // jndiConfigLocation);
 
         // otherwise, look if we have a config.properties
         if (configProperties == null) {
@@ -181,19 +179,26 @@ public class WebApplicationLoader {
         }
 
         // --------- /Loading the config.properties --------- //
-        // if a ServletContext, then look if there is a WebApp instance
-        // application.appname.properties
+        // if a ServletContext, then look if there is a WebApp instance in the appDir parent folder
+        // with the name [appDir].application.properties
+        // The appDir is either the webApp root or the appDir that has been set in the servletContext initParameter (usually by snowServlet)
+        File appDir = null;
         if (servletContext != null) {
+        	String appDirPath = servletContext.getInitParameter("appDir");
+        	if (appDirPath != null){
+        		appDir = new File(appDirPath);
+        	}else{
+        		appDir  = getWebAppFolder();
+        	}
+        	
+            String appDirFolderName = appDir.getName();
 
-            File webAppFolder = getWebAppFolder();
-            String webAppFolderName = webAppFolder.getName();
-
-            File webAppPropertiesFile = new File(webAppFolder.getParentFile(), webAppFolderName + ".application.properties");
-            if (webAppPropertiesFile.exists()) {
-                Properties webAppProperties = new Properties();
-                webAppProperties.load(new FileReader(webAppPropertiesFile));
+            File appDirPropertiesFile = new File(appDir.getParentFile(), appDirFolderName + ".application.properties");
+            if (appDirPropertiesFile.exists()) {
+                Properties appDirProperties = new Properties();
+                appDirProperties.load(new FileReader(appDirPropertiesFile));
                 // override the appProperties with the WebAppRoperties
-                appProperties.putAll(webAppProperties);
+                appProperties.putAll(appDirProperties);
             }
 
         }
@@ -231,7 +236,7 @@ public class WebApplicationLoader {
         /*--------- /Load the Properties ---------*/
 
         /*--------- Load WebApplication ---------*/
-        appInjector = Guice.createInjector(new WebApplicationConfig(appProperties, sfkFolder, servletContext));
+        appInjector = Guice.createInjector(new WebApplicationConfig(appProperties, sfkFolder, appDir,servletContext));
         webApplication = appInjector.getInstance(WebApplication.class);
         /*--------- /Load WebApplication ---------*/
 
