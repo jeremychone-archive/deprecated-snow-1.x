@@ -120,9 +120,32 @@ public class HttpWriter {
 		
 		
 		// --------- Set Cache --------- //
-		res.setHeader("Pragma", "No-cache");
-		res.setHeader("Cache-Control", "no-cache,no-store,max-age=0");
-		res.setDateHeader("Expires", 1);
+		
+		if (cache) {
+            /*
+             * NOTE: for now we remove this, in the case of a CSS, we do not know the length, since it is a template
+             * contentLength = resourceFile.length();
+             * 
+             * if (contentLength < Integer.MAX_VALUE) { res.setContentLength((int) contentLength); } else {
+             * res.setHeader("content-length", "" + contentLength); }
+             */
+            // This content will expire in 1 hours.
+            final int CACHE_DURATION_IN_SECOND = 60 * 60 * 1; // 1 hours
+            final long CACHE_DURATION_IN_MS = CACHE_DURATION_IN_SECOND * 1000;
+            long now = System.currentTimeMillis();
+
+            res.addHeader("Cache-Control", "max-age=" + CACHE_DURATION_IN_SECOND);
+            res.addHeader("Cache-Control", "must-revalidate");// optional
+            res.setDateHeader("Last-Modified", now);
+            res.setDateHeader("Expires", now + CACHE_DURATION_IN_MS);
+        } else {
+            res.setHeader("Pragma", "No-cache");
+            res.setHeader("Cache-Control", "no-cache,no-store,max-age=0");
+            res.setDateHeader("Expires", 1);
+        }
+
+		
+		
 		// --------- Set Cache --------- //		
 	}
 	
