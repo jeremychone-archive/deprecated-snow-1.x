@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.snowfk.web.db.hibernate.HibernateDaoHelper;
-import org.snowfk.web.db.hibernate.HibernateDaoHelperImpl;
 import org.snowfk.web.names.EntityClasses;
 import org.snowfk.web.names.WebHandlerClasses;
 import org.snowfk.web.names.WebHandlers;
@@ -78,15 +76,6 @@ public class WebModuleConfig extends AbstractModule {
         }
         
     }
-    
-    /*
-    @Provides
-    @Inject
-    @Singleton
-    public HibernateDaoHelper provideHibernateDaoHelper(Injector injector){
-        return injector.getInstance(HibernateDaoHelperImpl.class);
-    }
-    */
     
     
     /**
