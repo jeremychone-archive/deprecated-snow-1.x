@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snowfk.util.FileUtil;
@@ -205,7 +206,7 @@ public class WebController {
                 
 
                 if (content != null) {
-                    serviceStatic(rc.getRes(), href, content, null);
+                    serviceStatic(rc, href, content, null);
                 }
                 // // Otherwise, service the part
                 else {
@@ -312,17 +313,19 @@ public class WebController {
             File resourceFile = part.getResourceFile();
             String resourceFullPath = resourceFile.getAbsolutePath();
             if (resourceFile.exists()) {
-                serviceStatic(res, resourceFullPath, null, resourceFile);
+                serviceStatic(rc, resourceFullPath, null, resourceFile);
             } else {
                 sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
             }
         }
     }
 
-    private void serviceStatic(HttpServletResponse res, String fullPath, String resourceContent, File resourceFile)
+    private void serviceStatic(RequestContext rc, String fullPath, String resourceContent, File resourceFile)
                             throws Exception {
 
         // SystemOutUtil.printValue("RouterServlet serviceStatic pri", pri + " > " + part.getPri());
+
+        HttpServletResponse res = rc.getRes();
 
         String contentType = servletContext.getMimeType(fullPath);
         // if the servletContext (server) could not fine the mimeType, then, give a little help
@@ -348,8 +351,24 @@ public class WebController {
             final long CACHE_DURATION_IN_MS = CACHE_DURATION_IN_SECOND * 1000;
             long now = System.currentTimeMillis();
 
-            res.addHeader("Cache-Control", "max-age=" + CACHE_DURATION_IN_SECOND);
-            res.addHeader("Cache-Control", "must-revalidate");// optional
+            // this is a tomcat workaround.  tomcat automatically adds Pragma: no-cache if there's
+            // the header isn't set during the request.  there's also a workaround to disable this
+            // behavior, but it requires changes to the context.xml (the one deployed to the server
+            // directory...it doesn't work on a context.xml deployed in the META-INF directory).
+            //
+            // Pragma is an implementation-dependant header that only made it into the HTTP spec due
+            // to widespread adoption of the "no-cache" values.  the spec only defines behavior for that
+            // one value, and setting it to anything else has no affect.
+            //
+            // we set a value here that corresponds to our Cache-Control, and this seems
+            // to get tomcat to not clobber things.  it has no real effect with browsers.
+            if(StringUtils.stripToEmpty(rc.getServletContext().getServerInfo()).toLowerCase().contains("tomcat")) {
+                res.setHeader("Pragma", "public");
+            }
+
+            // for tomcat, calling set header here  is of utmost importance.  just like it will add Pragma headers,
+            // it will also put a no-cache in unless we call *set* instead of *add*.
+            res.setHeader("Cache-Control", "public,max-age=" + CACHE_DURATION_IN_SECOND + ",must-revalidate");
             res.setDateHeader("Last-Modified", now);
             res.setDateHeader("Expires", now + CACHE_DURATION_IN_MS);
         } else {
