@@ -51,7 +51,7 @@ public class WebController {
     private static final String         MODEL_KEY_REQUEST           = "r";
     public static int                   BUFFER_SIZE                 = 2048 * 2;
 
-    private WebApplication              webApplication;
+    private WebApplication webApplication;
 
     private ServletFileUpload           fileUploader;
     private ServletContext              servletContext;
@@ -219,7 +219,11 @@ public class WebController {
 
             sendHttpError(rc, e.getStatus(), e.getMessage());
 
-        } catch (Throwable e) {
+        } catch (AbortWithHttpRedirectException e) {
+
+            sendHttpRedirect(rc, e);
+        }
+        catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
                 e = e.getCause();
             }
@@ -228,6 +232,9 @@ public class WebController {
             // when it's thrown from within a web handler.
             if(e instanceof AbortWithHttpStatusException) {
                 sendHttpError(rc, ((AbortWithHttpStatusException) e).getStatus(), e.getMessage());
+            }
+            else if(e instanceof AbortWithHttpRedirectException) {
+                sendHttpRedirect(rc, (AbortWithHttpRedirectException) e);
             }
             else {
                 // and this is the normal case...
@@ -424,6 +431,17 @@ public class WebController {
         }
     }
 
+
+    private void sendHttpRedirect(RequestContext rc, AbortWithHttpRedirectException e) throws IOException {
+
+        // like above, there's not much we can do if the response has already been committed.  in that case,
+        // we'll just silently ignore the exception.
+        HttpServletResponse response = rc.getRes();
+        if(!response.isCommitted()) {
+            response.setStatus(e.getRedirectCode());
+            response.addHeader("Location", e.getLocation());
+        }
+    }
 
     static Set cachableExtension = MapUtil.setIt(".css", ".js", ".png", ".gif", ".jpeg");
 
