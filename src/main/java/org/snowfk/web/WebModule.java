@@ -10,9 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.Interceptor;
 import org.snowfk.web.auth.AuthService;
 import org.snowfk.web.db.hibernate.HibernateDaoHelper;
+import org.snowfk.web.db.hibernate.HibernateInterceptorBinding;
 import org.snowfk.web.method.WebActionHandler;
 import org.snowfk.web.method.WebActionHandlerRef;
 import org.snowfk.web.method.WebExceptionHandler;
@@ -60,8 +60,8 @@ public class WebModule {
 	// injected (optional)
 	private AuthService authService;
 
-	// injected (optional)
-	private Interceptor hibernateInterceptor;
+	// injected (optional) (use @HibernateInterceptorBinding to bind)
+	private Object hibernateInterceptor;
 
 	// injection (optional)
 	private CustomFramePriPath customeFramePriPath;
@@ -221,12 +221,12 @@ public class WebModule {
 		this.leafPaths = leafPaths;
 	}
 
-	public Interceptor getHibernateInterceptor() {
+	public Object getHibernateInterceptor() {
 		return hibernateInterceptor;
 	}
 
 	@Inject(optional = true)
-	public void setHibernateInterceptor(Interceptor hibernateInterceptor) {
+	public void setHibernateInterceptor(@HibernateInterceptorBinding Object hibernateInterceptor) {
 		this.hibernateInterceptor = hibernateInterceptor;
 	}
 

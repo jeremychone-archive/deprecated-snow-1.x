@@ -308,8 +308,6 @@ public class WebController {
         boolean webFilePart = webApplication.processWebFilePart(part, rc);
         // if it was not processed by a webFile, then, do the standard process.
         if (!webFilePart) {
-            HttpServletResponse res = rc.getRes();
-
             File resourceFile = part.getResourceFile();
             String resourceFullPath = resourceFile.getAbsolutePath();
             if (resourceFile.exists()) {

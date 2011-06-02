@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snowfk.SnowRuntimeException;
@@ -104,23 +103,25 @@ public class WebApplication {
         if (!initialized) {
 
             /*--------- Initialize Hibernate ---------*/
-            Interceptor hibernateInterceptor = null;
-            // look for the first HibernateInterceptor
-            // FIXME: Need to support multi-interceptor. Right now, just support
-            // one (take the first one)
-            for (WebModule webModule : webModuleByName.values()) {
-                hibernateInterceptor = webModule.getHibernateInterceptor();
-                if (hibernateInterceptor != null) {
-                    break;
-                }
-            }
+            
 
             // init hibernate if needed
             if (hibernateHandler != null) {
+                Object hibernateInterceptor = null;
+                // look for the first HibernateInterceptor
+                // FIXME: Need to support multi-interceptor. Right now, just support
+                // one (take the first one)
+                for (WebModule webModule : webModuleByName.values()) {
+                    hibernateInterceptor = webModule.getHibernateInterceptor();
+                    if (hibernateInterceptor != null) {
+                        break;
+                    }
+                }                
                 for (WebModule webModule : webModuleByName.values()) {
                     hibernateHandler.addEntityClasses(webModule.getEntityClasses());
                 }
-                hibernateHandler.initSessionFactory(hibernateInterceptor);
+                // Here we assume that the hibernateInterceptor is instanceof org.hibernate.Interceptor
+                hibernateHandler.initSessionFactory((org.hibernate.Interceptor) hibernateInterceptor);
             }
             /*--------- /Initialize Hibernate ---------*/
 
