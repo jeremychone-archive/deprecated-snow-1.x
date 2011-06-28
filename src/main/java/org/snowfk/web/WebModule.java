@@ -6,6 +6,7 @@ package org.snowfk.web;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -351,6 +352,7 @@ public class WebModule {
 		Class c = targetObject.getClass();
 
 		Method methods[] = c.getMethods();
+        List<String> additionalLeafPaths = new ArrayList<String>();
 
 		for (Method m : methods) {
 			// Annotation[] as = m.getAnnotations();
@@ -368,6 +370,22 @@ public class WebModule {
 			WebModelHandler modelBuilder = m.getAnnotation(WebModelHandler.class);
 			if (modelBuilder != null) {
 				registerWebModel(targetObject, m, modelBuilder);
+
+                // if this is for a leaf path, grab the startWith values  from the
+                // the web model handler annotation.
+                // todo - warn if startsWith has no entries which has no effect?
+                if(modelBuilder.leafPath()) {
+                    String[] leafPaths = modelBuilder.startsWith();
+
+                    // make sure they all have trailing slashes...
+                    for(int i = 0; i < leafPaths.length; i++) {
+                        if(!leafPaths[i].endsWith("/")) {
+                            leafPaths[i] += "/";
+                        }
+                    }
+
+                    additionalLeafPaths.addAll(Arrays.asList(leafPaths));
+                }
 			}
 			// --------- Register Web Model --------- //
 
@@ -392,6 +410,16 @@ public class WebModule {
 			// --------- /Register Web Template Directive --------- //
 
 		}
+
+        // if we have any declared leaf paths, add them into the array.  they come after
+        // any injected leaf path values.
+        if(additionalLeafPaths.size() > 0) {
+            if(leafPaths != null) {
+                additionalLeafPaths.addAll(0, Arrays.asList(leafPaths));
+            }
+
+            leafPaths = additionalLeafPaths.toArray(new String[additionalLeafPaths.size()]);
+        }
 	}
 
 	private final void registerWebModel(Object webHandler, Method m, WebModelHandler webModel) {

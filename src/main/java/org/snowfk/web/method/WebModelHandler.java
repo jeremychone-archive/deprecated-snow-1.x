@@ -14,4 +14,5 @@ public @interface WebModelHandler {
 
     String[] startsWith() default {};
     String[] matches() default {};
+    boolean leafPath() default false;
 }
