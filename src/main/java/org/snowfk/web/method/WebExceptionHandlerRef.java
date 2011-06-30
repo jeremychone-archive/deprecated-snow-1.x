@@ -1,9 +1,12 @@
 package org.snowfk.web.method;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import org.snowfk.web.RequestContext;
 import org.snowfk.web.method.argument.WebArgRef;
+import org.snowfk.web.method.argument.WebParameterParser;
 
 public class WebExceptionHandlerRef extends BaseWebHandlerRef {
 	@SuppressWarnings("unused")
@@ -11,8 +14,9 @@ public class WebExceptionHandlerRef extends BaseWebHandlerRef {
 	
 	private Class<? extends Throwable> exceptionClass;
 	
-	public WebExceptionHandlerRef(Object webHandler, Method method,WebExceptionHandler webExceptionHandler) {
-		super(webHandler, method);
+	public WebExceptionHandlerRef(Object webHandler, Method method, Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap,
+                                  WebExceptionHandler webExceptionHandler) {
+		super(webHandler, method, webParameterParserMap);
 		
 		this.webExceptionHandler = webExceptionHandler;
 		
@@ -36,7 +40,7 @@ public class WebExceptionHandlerRef extends BaseWebHandlerRef {
         if (webArgRefs.size() > 1){
             for (int i = 1; i < paramValues.length;i++){
                 WebArgRef webParamRef = webArgRefs.get(i);
-                paramValues[i] = webParamRef.getValue(rc);
+                paramValues[i] = webParamRef.getValue(method, rc);
             }
         }
         

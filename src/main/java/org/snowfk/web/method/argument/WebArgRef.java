@@ -3,6 +3,8 @@
  */
 package org.snowfk.web.method.argument;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
@@ -19,6 +21,9 @@ public class WebArgRef {
     private WebMap    webMap    = null;
     private WebEntity webEntity = null;
     private WebState  webState  = null;
+
+    private WebParameterParser webParameterParser;
+    private Annotation webParameterAnnotation;
 
     private Class     paramClass;
 
@@ -45,22 +50,28 @@ public class WebArgRef {
         this(paramClass);
         this.webMap = webMap;
     }
-    
+
     public WebArgRef(WebEntity webEntity, Class paramClass) {
         this(paramClass);
         this.webEntity = webEntity;
     }
-    
+
     public WebArgRef(WebState webState, Class paramClass) {
         this(paramClass);
         this.webState = webState;
-    }    
+    }
+
+    public WebArgRef(WebParameterParser webParameterParser, Annotation webParameterAnnotation, Class paramClass) {
+        this.webParameterParser = webParameterParser;
+        this.webParameterAnnotation = webParameterAnnotation;
+        this.paramClass = paramClass;
+    }
 
     public Class getArgClass(){
     	return paramClass;
     }
     @SuppressWarnings("unchecked")
-    public Object getValue(RequestContext rc) {
+    public Object getValue(Method m, RequestContext rc) {
         Object value = null;
         if (paramClass == RequestContext.class) {
             value = rc;
@@ -94,6 +105,8 @@ public class WebArgRef {
             else {
                 value = rc.getCurrentPriFullPath();
             }
+        } else if (webParameterParser != null) {
+            value = webParameterParser.getParameterValue(m, webParameterAnnotation, paramClass, rc);
         } else {
             String paramName;
             if (webParam != null) {

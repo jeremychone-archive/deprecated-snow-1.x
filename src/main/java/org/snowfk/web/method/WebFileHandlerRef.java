@@ -1,19 +1,23 @@
 package org.snowfk.web.method;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.snowfk.util.FileUtil;
 import org.snowfk.web.RequestContext;
 import org.snowfk.web.method.argument.WebArgRef;
+import org.snowfk.web.method.argument.WebParameterParser;
 
 public class WebFileHandlerRef extends BaseWebHandlerRef implements PathMatcher {
 
     private WebFileHandler webFile;
 
-    public WebFileHandlerRef(Object object, Method method, WebFileHandler webFile) {
-        super(object, method);
+    public WebFileHandlerRef(Object object, Method method, Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap,
+                             WebFileHandler webFile) {
+        super(object, method, webParameterParserMap);
         this.webFile = webFile;
         initWebParamRefs();
     }
@@ -53,7 +57,7 @@ public class WebFileHandlerRef extends BaseWebHandlerRef implements PathMatcher 
         Object[] paramValues = new Object[webArgRefs.size()];
         int i = 0;
         for (WebArgRef webParamRef : webArgRefs) {
-            paramValues[i++] = webParamRef.getValue(rc);
+            paramValues[i++] = webParamRef.getValue(method, rc);
         }
         return method.invoke(webHandler, paramValues);
     }

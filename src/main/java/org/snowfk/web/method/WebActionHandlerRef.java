@@ -4,10 +4,13 @@
 package org.snowfk.web.method;
 
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import org.snowfk.web.RequestContext;
 import org.snowfk.web.method.argument.WebArgRef;
+import org.snowfk.web.method.argument.WebParameterParser;
 
 
 public class WebActionHandlerRef extends BaseWebHandlerRef{
@@ -19,8 +22,9 @@ public class WebActionHandlerRef extends BaseWebHandlerRef{
 
 
     /*--------- Initialization ---------*/
-    public WebActionHandlerRef(Object object, Method method, WebActionHandler webAction) {
-        super(object,method);
+    public WebActionHandlerRef(Object object, Method method, Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap,
+                               WebActionHandler webAction) {
+        super(object,method,webParameterParserMap);
 
         this.webAction = webAction;
         
@@ -33,7 +37,7 @@ public class WebActionHandlerRef extends BaseWebHandlerRef{
         Object[] paramValues = new Object[webArgRefs.size()];
         int i = 0;
         for (WebArgRef webParamRef : webArgRefs){
-            paramValues[i++] = webParamRef.getValue(rc);
+            paramValues[i++] = webParamRef.getValue(method, rc);
         }
         return method.invoke(webHandler, paramValues);
     }

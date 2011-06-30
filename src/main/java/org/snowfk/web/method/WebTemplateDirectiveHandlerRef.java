@@ -3,20 +3,21 @@
  */
 package org.snowfk.web.method;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 
 import org.snowfk.web.RequestContext;
 import org.snowfk.web.method.argument.WebArgRef;
+import org.snowfk.web.method.argument.WebParameterParser;
 
 import freemarker.core.Environment;
 
 public class WebTemplateDirectiveHandlerRef extends BaseWebHandlerRef {
 
     
-    public WebTemplateDirectiveHandlerRef(Object object, Method method) {
-        super(object, method);
-        // TODO Auto-generated constructor stub
+    public WebTemplateDirectiveHandlerRef(Object object, Method method, Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap) {
+        super(object, method, webParameterParserMap);
         initWebParamRefs();
     }    
     
@@ -30,7 +31,7 @@ public class WebTemplateDirectiveHandlerRef extends BaseWebHandlerRef {
         if (webArgRefs.size() > 2){
             for (int i = 2; i < paramValues.length;i++){
                 WebArgRef webParamRef = webArgRefs.get(i);
-                paramValues[i] = webParamRef.getValue(rc);
+                paramValues[i] = webParamRef.getValue(method, rc);
             }
         }
         

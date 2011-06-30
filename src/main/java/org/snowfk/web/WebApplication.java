@@ -131,8 +131,7 @@ public class WebApplication {
                 try {
                     webModule.init();
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    logger.error(e.getMessage());
+                    logger.error("error initializing webapp", e);
                 }
             }
             /*--------- /Initialize WebModule ---------*/

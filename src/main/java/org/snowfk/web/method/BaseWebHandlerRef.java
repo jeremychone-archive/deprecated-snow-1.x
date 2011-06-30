@@ -7,11 +7,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.snowfk.web.method.argument.WebArgRef;
 import org.snowfk.web.method.argument.WebEntity;
 import org.snowfk.web.method.argument.WebMap;
 import org.snowfk.web.method.argument.WebParam;
+import org.snowfk.web.method.argument.WebParameterParser;
 import org.snowfk.web.method.argument.WebPath;
 import org.snowfk.web.method.argument.WebState;
 import org.snowfk.web.method.argument.WebUser;
@@ -21,10 +23,12 @@ public class BaseWebHandlerRef {
     protected Object       webHandler;
     protected Method       method;
     protected List<WebArgRef> webArgRefs = new ArrayList<WebArgRef>();
+    protected Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap;
     
-    public BaseWebHandlerRef(Object webHandler,Method method) {
+    public BaseWebHandlerRef(Object webHandler, Method method, Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap) {
         this.webHandler = webHandler;
         this.method = method;
+        this.webParameterParserMap = webParameterParserMap;
     }
     
     protected void initWebParamRefs(){
@@ -35,7 +39,7 @@ public class BaseWebHandlerRef {
             //for each method parameter class
 
             for (Class paramClass : paramClasses){
-                Object webArgumentAnnotation = getWebArgumentAnnotationFromAnnotationArray(paramAnnotationsArray[i]);
+                Annotation webArgumentAnnotation = getWebArgumentAnnotationFromAnnotationArray(paramAnnotationsArray[i]);
                 WebArgRef webParamRef;
                 if (webArgumentAnnotation instanceof WebParam){
                     webParamRef = new WebArgRef((WebParam)webArgumentAnnotation,paramClass);
@@ -49,6 +53,8 @@ public class BaseWebHandlerRef {
                     webParamRef = new WebArgRef((WebEntity)webArgumentAnnotation,paramClass);
                 }else if (webArgumentAnnotation instanceof WebState){
                     webParamRef = new WebArgRef((WebState)webArgumentAnnotation,paramClass);
+                }else if (webArgumentAnnotation != null && webParameterParserMap.containsKey(webArgumentAnnotation.annotationType())) {
+                    webParamRef = new WebArgRef(webParameterParserMap.get(webArgumentAnnotation.annotationType()), (Annotation) webArgumentAnnotation, paramClass);
                 }
                 else{
                     webParamRef = new WebArgRef(paramClass);
@@ -60,7 +66,7 @@ public class BaseWebHandlerRef {
         }
     }
     
-    private Object getWebArgumentAnnotationFromAnnotationArray(Annotation[] paramAnnotations){
+    private Annotation getWebArgumentAnnotationFromAnnotationArray(Annotation[] paramAnnotations){
         
         if (paramAnnotations != null){
             for (Annotation annotation : paramAnnotations){
@@ -80,6 +86,9 @@ public class BaseWebHandlerRef {
                     return annotation;
                 }
                 if (annotation instanceof WebState){
+                    return annotation;
+                }
+                if (webParameterParserMap.containsKey(annotation.annotationType())) {
                     return annotation;
                 }
             }

@@ -4,6 +4,7 @@
 package org.snowfk.web;
 
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import org.snowfk.web.method.WebModelHandler;
 import org.snowfk.web.method.WebModelHandlerRef;
 import org.snowfk.web.method.WebTemplateDirectiveHandler;
 import org.snowfk.web.method.WebTemplateDirectiveHandlerRef;
+import org.snowfk.web.method.argument.WebParameterParser;
 import org.snowfk.web.names.EntityClasses;
 import org.snowfk.web.names.LeafPaths;
 import org.snowfk.web.names.WebHandlers;
@@ -52,7 +54,8 @@ public class WebModule {
 	private Map<String, WebActionHandlerRef> webActionDic = new HashMap<String, WebActionHandlerRef>();
 	private List<WebFileHandlerRef> webFileList = new ArrayList<WebFileHandlerRef>();
 	private Map<Class<? extends Throwable>,WebExceptionHandlerRef> webExceptionHanderMap = new HashMap<Class<? extends Throwable>, WebExceptionHandlerRef>();
-	
+    private Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap = new HashMap<Class<? extends Annotation>, WebParameterParser>();
+
 	private List<TemplateDirectiveProxy> templateDirectiveProxyList = new ArrayList<TemplateDirectiveProxy>();
 
 	// injected (optional)
@@ -75,6 +78,9 @@ public class WebModule {
 	
 	// injection (optional)
 	private WebHandlerInterceptor webHandlerMethodInterceptor;
+
+    // injection (optional)
+    private WebParameterParser[] webParameterParsers;
 
 	// injection (optional)
 	private HibernateDaoHelper hibernateDaoHelper;
@@ -263,6 +269,16 @@ public class WebModule {
 		this.webHandlerMethodInterceptor = webHandlerMethodInterceptor;
 	}
 
+    public WebParameterParser[] getWebParameterParsers() {
+        return webParameterParsers;
+    }
+
+    @Inject(optional = true)
+    public void setWebParameterParsers(WebParameterParser[] webParameterParsers) {
+        this.webParameterParsers = webParameterParsers;
+    }
+
+
 	public AuthService getAuthService() {
 		return authService;
 	}
@@ -328,6 +344,13 @@ public class WebModule {
 
 	/* --------- WebModule Life Cycle --------- */
 	public void init() throws Exception {
+
+        if(webParameterParsers != null) {
+            for(WebParameterParser webParameterParser : webParameterParsers) {
+                registerWebParameterParser(webParameterParser);
+            }
+        }
+
 		if (webHandlers != null) {
 			for (Object activeBean : webHandlers) {
 				registerWebHandlerMethods(activeBean);
@@ -347,6 +370,15 @@ public class WebModule {
 	/* --------- /WebModule Life Cycle --------- */
 
 	/*--------- Registration Methods ---------*/
+
+    private void registerWebParameterParser(WebParameterParser webParameterParser) {
+        Class<? extends Annotation> annotation = webParameterParser.getAnnotationClass();
+        if(webParameterParserMap.containsKey(annotation)) {
+            throw new IllegalStateException("multiple web parameter parsers configured for annotation class : " + annotation.getName());
+        }
+
+        webParameterParserMap.put(annotation, webParameterParser);
+    }
 
 	private final void registerWebHandlerMethods(Object targetObject) throws Exception {
 		Class c = targetObject.getClass();
@@ -426,7 +458,7 @@ public class WebModule {
 		// System.out.println("Register WebModel " + getName() + " - " +
 		// m.getName());
 
-		WebModelHandlerRef webModelRef = new WebModelHandlerRef(webHandler, m, webModel);
+		WebModelHandlerRef webModelRef = new WebModelHandlerRef(webHandler, m, webParameterParserMap, webModel);
 		webModelRefList.add(webModelRef);
 
 		String startWithArray[] = webModel.startsWith();
@@ -455,16 +487,16 @@ public class WebModule {
 		// System.out.println("WebModule.registerWebAction: " + getName() + ":"
 		// + actionName);
 		// add this object and method to the list
-		webActionDic.put(actionName, new WebActionHandlerRef(webHandler, m, webAction));
+		webActionDic.put(actionName, new WebActionHandlerRef(webHandler, m, webParameterParserMap, webAction));
 	}
 
 	private final void registerWebFile(Object webHandler, Method m, WebFileHandler webFile) {
-		WebFileHandlerRef webFileRef = new WebFileHandlerRef(webHandler, m, webFile);
+		WebFileHandlerRef webFileRef = new WebFileHandlerRef(webHandler, m, webParameterParserMap, webFile);
 		webFileList.add(webFileRef);
 	}
 	
 	private final void registerWebExceptionHandler(Object webHandler, Method m, WebExceptionHandler webExceptionHandler) {
-		WebExceptionHandlerRef webExcpetionHandlerRef = new WebExceptionHandlerRef(webHandler, m, webExceptionHandler);
+		WebExceptionHandlerRef webExcpetionHandlerRef = new WebExceptionHandlerRef(webHandler, m, webParameterParserMap, webExceptionHandler);
 		webExceptionHanderMap.put(webExcpetionHandlerRef.getThrowableClass(), webExcpetionHandlerRef);
 		//webFileList.add(webFileRef);
 	}
@@ -479,7 +511,7 @@ public class WebModule {
 			templateMethodName = m.getName();
 		}
 
-		WebTemplateDirectiveHandlerRef directiveRef = new WebTemplateDirectiveHandlerRef(webHandler, m);
+		WebTemplateDirectiveHandlerRef directiveRef = new WebTemplateDirectiveHandlerRef(webHandler, m, webParameterParserMap);
 		TemplateDirectiveProxy directiveProxy = new TemplateDirectiveProxy(templateMethodName, directiveRef);
 		templateDirectiveProxyList.add(directiveProxy);
 	}

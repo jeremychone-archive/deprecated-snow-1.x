@@ -3,6 +3,7 @@
  */
 package org.snowfk.web.method;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -10,15 +11,16 @@ import java.util.regex.Pattern;
 
 import org.snowfk.web.RequestContext;
 import org.snowfk.web.method.argument.WebArgRef;
-
+import org.snowfk.web.method.argument.WebParameterParser;
 
 
 public class WebModelHandlerRef extends BaseWebHandlerRef implements PathMatcher {
 
     WebModelHandler webModel;
 
-    public WebModelHandlerRef(Object object, Method method, WebModelHandler webModel) {
-        super(object, method);
+    public WebModelHandlerRef(Object object, Method method, Map<Class<? extends Annotation>,WebParameterParser> webParameterParserMap,
+                              WebModelHandler webModel) {
+        super(object, method, webParameterParserMap);
         this.webModel = webModel;
         
         initWebParamRefs();
@@ -56,7 +58,7 @@ public class WebModelHandlerRef extends BaseWebHandlerRef implements PathMatcher
         if (webArgRefs.size() > 1){
             for (int i = 1; i < paramValues.length;i++){
                 WebArgRef webParamRef = webArgRefs.get(i);
-                paramValues[i] = webParamRef.getValue(rc);
+                paramValues[i] = webParamRef.getValue(method, rc);
             }
         }
         
