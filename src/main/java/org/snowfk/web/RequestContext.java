@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -361,31 +362,50 @@ public class RequestContext {
                 try {
                     fileItems = fileUploader.parseRequest(getReq());
                     paramMap = new HashMap<String, Object>();
+
+                    Map<String,Class> paramBaseClasses = new HashMap<String,Class>();
                     boolean hasMultivalues = false;
+
                     for (Object item : fileItems) {
                         FileItem fileItem = (FileItem) item;
                         String paramName = fileItem.getFieldName();
-                        if (fileItem.isFormField()) {
-                            String value = fileItem.getString();
-                            // if there is already a value, then, create a list
-                            if (paramMap.containsKey(paramName)) {
-                                hasMultivalues = true;
-                                Object prevValue = paramMap.get(paramName);
-                                if (prevValue instanceof List) {
-                                    ((List) prevValue).add(value);
-                                } else {
-                                    List<String> values = new ArrayList<String>(2);
-                                    values.add((String) prevValue);
-                                    values.add(value);
-                                    paramMap.put(paramName, values);
-                                }
-                            } else {
-                                paramMap.put(paramName, value);
-                            }
-                        } else {
-                            paramMap.put(paramName, fileItem);
+
+                        // in case of normal fields, take the string value.  otherwise
+                        // put the whole file item into the map.
+                        Object value;
+                        Class paramBaseClass;
+                        if(fileItem.isFormField()) {
+                            value = fileItem.getString();
+                            paramBaseClass = String.class;
+                        }
+                        else {
+                            value = fileItem;
+                            paramBaseClass = FileItem.class;
                         }
 
+                        // make sure that the client isn't calling something that is mixing and
+                        // matching parameter types...
+                        // todo - could support this as Object arrays or arrays of most specific shared super class.
+                        Class prevBaseClass = paramBaseClasses.put(paramName, paramBaseClass);
+                        if(prevBaseClass != null && !prevBaseClass.equals(paramBaseClass)) {
+                            throw new IllegalArgumentException("parameter " + paramName + " has mixed parameter types (expected all file or all string)");
+                        }
+
+                        // if there is already a value, then, create a list
+                        if (paramMap.containsKey(paramName)) {
+                            hasMultivalues = true;
+                            Object prevValue = paramMap.get(paramName);
+                            if (prevValue instanceof List) {
+                                ((List) prevValue).add(value);
+                            } else {
+                                List values = new ArrayList(2);
+                                values.add(prevValue);
+                                values.add(value);
+                                paramMap.put(paramName, values);
+                            }
+                        } else {
+                            paramMap.put(paramName, value);
+                        }
                     }
 
                     // if we had multivalues, need to change the list to arrays
@@ -393,8 +413,8 @@ public class RequestContext {
                         for (String name : paramMap.keySet()) {
                             Object value = paramMap.get(name);
                             if (value instanceof List) {
-                                List<String> valueList = (List<String>) value;
-                                String[] valueArray = new String[valueList.size()];
+                                List valueList = (List) value;
+                                Object[] valueArray = (Object[]) Array.newInstance(paramBaseClasses.get(name), valueList.size());
                                 valueList.toArray(valueArray);
                                 paramMap.put(name, valueArray);
                             }
