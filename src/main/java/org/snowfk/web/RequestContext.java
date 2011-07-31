@@ -506,7 +506,7 @@ public class RequestContext {
         }
         WebStateHandle webState = webStateMap.get(stateContext);
         if (webState == null){
-            webState = new WebStateHandle(stateContext,this);
+            webState = peekCurrentWebModule().getWebStateHandleFactory().constructWebStateHandle(stateContext, this);
             webStateMap.put(stateContext, webState);
         }
         return webState;
@@ -626,7 +626,7 @@ public class RequestContext {
      * Return the value in the model map (the m.**) with the appropriate type or
      * null if not found.
      * 
-     * @see getModelValue(String namePath,Class<T> cls,T defaultValue)
+     * @see #getModelValue(String, Class, Object)
      */
     public <T> T getModelValue(String namePath, Class<T> cls) {
         return getModelValue(namePath, cls, null);

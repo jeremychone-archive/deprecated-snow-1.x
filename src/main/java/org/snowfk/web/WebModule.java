@@ -85,6 +85,9 @@ public class WebModule {
 	// injection (optional)
 	private HibernateDaoHelper hibernateDaoHelper;
 
+    // injection (required!)
+    private WebStateHandleFactory webStateHandleFactory;
+
 	// Injected
 	private Injector injector;
 
@@ -305,7 +308,16 @@ public class WebModule {
 		this.injector = injector;
 	}
 
-	/*--------- /Dependency Methods ---------*/
+    public WebStateHandleFactory getWebStateHandleFactory() {
+        return webStateHandleFactory;
+    }
+
+    @Inject
+    public void setWebStateHandleFactory(WebStateHandleFactory webStateHandleFactory) {
+        this.webStateHandleFactory = webStateHandleFactory;
+    }
+
+    /*--------- /Dependency Methods ---------*/
 
 	/*--------- Set by WebApplicationLoader.load() ---------*/
 	// Usually set by WebApplicationLoader.load()

@@ -3,6 +3,9 @@
  */
 package org.snowfk.util;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -139,7 +142,7 @@ public class HttpRequestUtil {
             for (String string : queryString.split("&")){
                 String[] nameAndValue = string.split("=");
                 if (nameAndValue != null && nameAndValue.length > 1){
-                    map.put(nameAndValue[0], nameAndValue[1]);
+                    map.put(urlDecode(nameAndValue[0]), urlDecode(nameAndValue[1]));
                 }
             }
         }
@@ -157,11 +160,11 @@ public class HttpRequestUtil {
                 }else{
                     firstParam = false;
                 }
-                sb.append(key.toString());
+                sb.append(urlEncode(key.toString()));
                 
                 Object value = map.get(key);
                 if (value != null){
-                    sb.append('=').append(value.toString());
+                    sb.append('=').append(urlEncode(value.toString()));
                 }
             }
         }
@@ -169,4 +172,31 @@ public class HttpRequestUtil {
         return sb.toString();
     }
     /*--------- /Query String ---------*/
+
+
+    /**
+     * same as {@link URLEncoder#encode(String, String)} except forces UTF-8 w/ no checked exception.
+     * @throws IllegalStateException if the platform doesn't support UTF-8...shouldn't happen in practice.
+     */
+    public static String urlEncode(String str) {
+      try {
+            return str == null ? null : URLEncoder.encode(str, "UTF-8");
+        }
+        catch(UnsupportedEncodingException e) {
+            throw new IllegalStateException("Your system must support UTF-8");
+        }
+    }
+
+    /**
+     * same as {@link URLDecoder#decode(String, String)} except forces UTF-8 w/ no checked exception.
+     * @throws IllegalStateException if the platform doesn't support UTF-8...shouldn't happen in practice.
+     */
+    public static String urlDecode(String str) {
+        try {
+            return str == null ? null : URLDecoder.decode(str, "UTF-8");
+        }
+        catch(UnsupportedEncodingException e) {
+            throw new IllegalStateException("Your system must support UTF-8");
+        }
+    }
 }
