@@ -277,16 +277,16 @@ public class WebController {
 
         rootModel.put(MODEL_KEY_REQUEST, ContextModelBuilder.buildRequestModel(rc));
 
-        /* --------- Set Headers --------- */
-        res.setContentType("text/html;charset=" + CHAR_ENCODING);
-        // if not cachable, then, set the appropriate headers.
-
         // check for a file not found condition.  if so, then we return control to the servlet container.
         if(part.getFormatType() == Part.FormatType.freemarker && !webApplication.getPart(part.getPri()).getResourceFile().exists()) {
             sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
             return;
         }
 
+        /* --------- Set Headers --------- */
+        res.setContentType(part.getFormatType() == Part.FormatType.json ? "application/json" : "text/html;charset=" + CHAR_ENCODING);
+
+        // if not cachable, then, set the appropriate headers.
         res.setHeader("Pragma", "No-cache");
         res.setHeader("Cache-Control", "no-cache,no-store,max-age=0");
         res.setDateHeader("Expires", 1);
