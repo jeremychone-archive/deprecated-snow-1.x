@@ -41,27 +41,27 @@ public class WebApplication {
     }
 
     // set by WebApplicationLoader.load
-    private String                 defaultModuleName;
-    private String                 contentFolderPath;
+    private String                      defaultModuleName;
+    private String                      contentFolderPath;
 
-    private FreemarkerRenderer     freemarkerRenderer;
-    private JsonRenderer           jsonRenderer;
-    private HibernateHandler       hibernateHandler;
-    private Map<String, WebModule> webModuleByName = new HashMap<String, WebModule>();
+    private FreemarkerRenderer          freemarkerRenderer;
+    private JsonRenderer                jsonRenderer;
+    private HibernateHandler            hibernateHandler;
+    private Map<String, WebModule>      webModuleByName = new HashMap<String, WebModule>();
 
-    private boolean                initialized     = false;
+    private boolean                     initialized     = false;
 
     // _this is a quick hack for PartResolver. There might be a better way, but
     // not sure.
     // feel free to suggest.
-    private WebApplication         _this           = this;
-    private PartResolver           partResolver    = new PartResolver() {
-                                                       public Part getPartFromPri(String pri) {
-                                                           return _this.getPart(pri);
-                                                       }
-                                                   };
-                                                   
-    private CurrentRequestContextHolder currentRequestContextHolder;                                                    
+    private WebApplication              _this           = this;
+    private PartResolver                partResolver    = new PartResolver() {
+                                                            public Part getPartFromPri(String pri) {
+                                                                return _this.getPart(pri);
+                                                            }
+                                                        };
+
+    private CurrentRequestContextHolder currentRequestContextHolder;
 
     @Inject
     public WebApplication(@Nullable HibernateHandler hibernateHandler) {
@@ -69,9 +69,10 @@ public class WebApplication {
     }
 
     @Inject
-    public void setCurrentRequestContextHolder(CurrentRequestContextHolder currentRequestContextHolder){
+    public void setCurrentRequestContextHolder(CurrentRequestContextHolder currentRequestContextHolder) {
         this.currentRequestContextHolder = currentRequestContextHolder;
     }
+
     /**
      * Can be injected via the application.properties, or could be set by the WebApplicationLoader from the
      * snow.applicationWebModuleConfigClass.getWebModuleName()
@@ -103,7 +104,6 @@ public class WebApplication {
         if (!initialized) {
 
             /*--------- Initialize Hibernate ---------*/
-            
 
             // init hibernate if needed
             if (hibernateHandler != null) {
@@ -116,7 +116,7 @@ public class WebApplication {
                     if (hibernateInterceptor != null) {
                         break;
                     }
-                }                
+                }
                 for (WebModule webModule : webModuleByName.values()) {
                     hibernateHandler.addEntityClasses(webModule.getEntityClasses());
                 }
@@ -159,16 +159,16 @@ public class WebApplication {
     /* --------- /WebApplication Life Cycle --------- */
 
     /*--------- Getters ---------*/
-    public CurrentRequestContextHolder getCurrentRequestContextHolder(){
+    public CurrentRequestContextHolder getCurrentRequestContextHolder() {
         return currentRequestContextHolder;
     }
-    
+
     public Collection<WebModule> getWebModules() {
         return webModuleByName.values();
     }
 
     public WebModule getWebModule(String moduleName) {
-        if (moduleName != null) {
+        if (moduleName != null && !moduleName.equals("default")) {
             return webModuleByName.get(moduleName);
         } else {
             return getDefaultWebModule();
@@ -205,29 +205,26 @@ public class WebApplication {
     public Part getPart(String pagePri, String framePri) {
         /*--------- Get the pri info ---------*/
         Type partType = PriUtil.getPartType(pagePri);
-        
-        //by default, the partType is Template ("t")
-        if (partType == null){
+
+        // by default, the partType is Template ("t")
+        if (partType == null) {
             partType = Type.t;
         }
         /*
-        if (partType == null) {
-            throw new RuntimeException("Wrong pri format, no part type: " + pagePri);
-        }
-        */
+         * if (partType == null) { throw new RuntimeException("Wrong pri format, no part type: " + pagePri); }
+         */
 
         WebModule webModule = getWebModule(PriUtil.getModuleNameFromPri(pagePri));
-        
-        //use the default module
-        //TODO: problably need to take the currentModule
-        if (webModule == null){
+
+        // use the default module
+        // TODO: problably need to take the currentModule
+        if (webModule == null) {
             webModule = getDefaultWebModule();
         }
-        /* now, use the default module
-        if (webModule == null) {
-            throw new RuntimeException("Wrong pri format, unknown module name: " + pagePri);
-        }
-        */
+        /*
+         * now, use the default module if (webModule == null) { throw new
+         * RuntimeException("Wrong pri format, unknown module name: " + pagePri); }
+         */
         /*--------- /Get the pri info ---------*/
 
         /*--------- Compute the folder and filePath ---------*/
@@ -385,8 +382,19 @@ public class WebApplication {
 
     /*--------- WebMethod Processing ---------*/
     public WebActionResponse processWebAction(String air, RequestContext rc) throws Throwable {
+        String moduleName, actionName;
+
+        // This is to support legacy module name way (as of now 2011-09-03 multiple module is deprecated)
         String[] webModuleNameAndActionName = air.split(":");
-        return processWebAction(webModuleNameAndActionName[0], webModuleNameAndActionName[1], rc);
+        if (webModuleNameAndActionName.length > 1) {
+            moduleName = webModuleNameAndActionName[0];
+            actionName = webModuleNameAndActionName[1];
+        } else {
+            // New way, single Module
+            moduleName = getDefaultWebModuleName();
+            actionName = webModuleNameAndActionName[0];
+        }
+        return processWebAction(moduleName, actionName, rc);
     }
 
     public WebActionResponse processWebAction(String webModuleName, String webActionName, RequestContext rc)
