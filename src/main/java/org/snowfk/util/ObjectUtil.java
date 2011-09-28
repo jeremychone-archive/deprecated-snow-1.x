@@ -6,7 +6,9 @@ package org.snowfk.util;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Date;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,6 +26,8 @@ public class ObjectUtil {
     static private Logger logger = LoggerFactory.getLogger(ObjectUtil.class);
     
     static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US); 
+    
+    public static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd";
     
     //NOTE: the beanUtil use the ObjectUtil.getValue to convert
     static BeanUtilsBean beanUtilsBean = new BeanUtilsBean(new ConvertUtilsBean() {
@@ -231,6 +235,9 @@ public class ObjectUtil {
                         } catch (IllegalArgumentException e) {
                             return defaultValue;
                         }
+                    }else if(cls==Date.class){
+                        SimpleDateFormat sdf = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
+                        return (T) new java.util.Date(sdf.parse(valueStr).getTime());
                     }
                 } else {
                     return defaultValue;
