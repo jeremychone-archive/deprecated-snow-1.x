@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.snowfk.annotation.Nullable;
 import org.snowfk.web.auth.AuthService;
 import org.snowfk.web.db.hibernate.HibernateDaoHelper;
 import org.snowfk.web.db.hibernate.HibernateInterceptorBinding;
@@ -35,7 +36,6 @@ import org.snowfk.web.renderer.freemarker.TemplateDirectiveProxy;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.snowfk.Nullable;
 
 public class WebModule {
 

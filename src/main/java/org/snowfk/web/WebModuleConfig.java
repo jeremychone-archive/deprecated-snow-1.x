@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.snowfk.annotation.Nullable;
 import org.snowfk.web.names.EntityClasses;
 import org.snowfk.web.names.WebHandlerClasses;
 import org.snowfk.web.names.WebHandlers;
@@ -16,7 +17,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import org.snowfk.Nullable;
 import com.google.inject.name.Names;
 
 public class WebModuleConfig extends AbstractModule {
@@ -28,7 +28,7 @@ public class WebModuleConfig extends AbstractModule {
         if (properties != null) {
             Names.bindProperties(binder(), properties);
         }
-        bind(WebApplication.class).toInstance(webApplication);        
+        //bind(WebApplication.class).toInstance(webApplication);        
     }
 
     /**

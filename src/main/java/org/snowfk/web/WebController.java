@@ -27,6 +27,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snowfk.annotation.Nullable;
 import org.snowfk.util.FileUtil;
 import org.snowfk.util.MapUtil;
 import org.snowfk.web.auth.Auth;
@@ -42,7 +43,6 @@ import org.snowfk.web.renderer.freemarker.PartCacheManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.snowfk.Nullable;
 
 @Singleton
 public class WebController {

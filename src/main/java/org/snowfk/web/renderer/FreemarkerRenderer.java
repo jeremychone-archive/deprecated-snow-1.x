@@ -14,6 +14,7 @@ import javax.servlet.ServletContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snowfk.annotation.Nullable;
 import org.snowfk.web.WebApplication;
 import org.snowfk.web.WebModule;
 import org.snowfk.web.part.Part;
@@ -31,7 +32,6 @@ import org.snowfk.web.renderer.freemarker.WebBundleDirective;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.snowfk.Nullable;
 
 
 import freemarker.cache.FileTemplateLoader;

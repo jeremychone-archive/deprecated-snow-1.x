@@ -13,6 +13,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snowfk.SnowRuntimeException;
+import org.snowfk.annotation.Nullable;
 import org.snowfk.util.FileUtil;
 import org.snowfk.web.db.hibernate.HibernateHandler;
 import org.snowfk.web.method.WebActionHandlerRef;
@@ -29,7 +30,6 @@ import org.snowfk.web.renderer.JsonRenderer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.snowfk.Nullable;
 import com.google.inject.name.Named;
 
 @Singleton

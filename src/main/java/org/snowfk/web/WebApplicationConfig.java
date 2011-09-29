@@ -9,6 +9,7 @@ import java.util.Properties;
 import javax.servlet.ServletContext;
 
 
+import org.snowfk.annotation.Nullable;
 import org.snowfk.util.MapUtil;
 import org.snowfk.web.db.hibernate.HibernateHandler;
 import org.snowfk.web.names.AppDir;
@@ -20,7 +21,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import org.snowfk.Nullable;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 

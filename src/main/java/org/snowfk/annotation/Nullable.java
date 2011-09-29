@@ -1,4 +1,4 @@
-package org.snowfk;
+package org.snowfk.annotation;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
