@@ -102,7 +102,7 @@ public class WebApplicationLoader {
         if (propertiesFile.exists()) {
             appProperties.load(new FileReader(propertiesFile));
         } else {
-            logger.info("No application.properties found in WEB-INF/snow/. Starting blank application.");
+            logger.info("No application.properties found at " + propertiesFile.getAbsolutePath() + " - Starting blank application.");
         }
 
         // second load the config.properties. If we have a

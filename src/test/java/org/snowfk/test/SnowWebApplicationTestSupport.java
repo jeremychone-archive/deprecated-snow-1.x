@@ -12,7 +12,7 @@
  *
  */
 
-package org.snowfk.test.sample1;
+package org.snowfk.test;
 
 import static org.junit.Assert.assertTrue;
 
@@ -21,28 +21,32 @@ import java.io.File;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.snowfk.web.WebApplication;
 import org.snowfk.web.WebApplicationLoader;
-import org.snowfk.web.db.hibernate.HibernateHandler;
 
-public class Sample1TestSupport {
-    private static String       SNOW_FOLDER_SAMPLE1_PATH = "src/test/resources/sample1";
+public class SnowWebApplicationTestSupport {
+    protected static String       SNOW_FOLDER_SAMPLE1_PATH = "TOOVERRIDE";
 
-    static WebApplication       webApplication;
-    static WebApplicationLoader appLoader;
-    static HibernateHandler     hibernateHandler;
+    protected static WebApplication       webApplication;
+    protected static WebApplicationLoader appLoader;
 
-    @BeforeClass
-    public static void initWebApplication() throws Exception {
-        File sfkFolder = new File(SNOW_FOLDER_SAMPLE1_PATH);
-        assertTrue("SFK Folder does not exist", sfkFolder.exists());
+    
+    /**
+     * But be called by the TestUnit class from the @BeforClass method
+     * @param appFolder
+     * @throws Exception
+     */
+    public static void initWebApplication(String appFolder) throws Exception {
+        File sfkFolder = new File(appFolder);
+        
+        assertTrue("Snow Folder " + sfkFolder.getAbsolutePath() + " does not exist", sfkFolder.exists());
 
         appLoader = new WebApplicationLoader(sfkFolder, null).load();
 
         webApplication = appLoader.getWebApplication();
         webApplication.init();
-        hibernateHandler = appLoader.getHibernateHandler();
+        
+        //hibernateHandler = appLoader.getHibernateHandler();
     }
 
     @AfterClass
@@ -51,26 +55,29 @@ public class Sample1TestSupport {
         //webApplication.destroy();
         webApplication = null;
         appLoader = null;
-        hibernateHandler = null;
     }
 
     @Before
     public void emulateRequestStart() {
         if (appLoader != null) {
+            /*
             HibernateHandler hibernateHandler = appLoader.getHibernateHandler();
             if (hibernateHandler != null) {
                 hibernateHandler.openSessionInView();
             }
+            */
         }
     }
 
     @After
     public void emulateRequestEnd() {
         if (appLoader != null) {
+            /*
             HibernateHandler hibernateHandler = appLoader.getHibernateHandler();
             if (hibernateHandler != null) {
                 hibernateHandler.closeSessionInView();
             }
+            */
         }
     }
 
