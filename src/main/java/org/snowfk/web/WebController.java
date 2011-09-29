@@ -42,7 +42,7 @@ import org.snowfk.web.renderer.freemarker.PartCacheManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.internal.Nullable;
+import org.snowfk.Nullable;
 
 @Singleton
 public class WebController {

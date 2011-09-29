@@ -35,7 +35,7 @@ import org.snowfk.web.renderer.freemarker.TemplateDirectiveProxy;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.internal.Nullable;
+import org.snowfk.Nullable;
 
 public class WebModule {
 

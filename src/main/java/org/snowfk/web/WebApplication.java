@@ -29,7 +29,7 @@ import org.snowfk.web.renderer.JsonRenderer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.internal.Nullable;
+import org.snowfk.Nullable;
 import com.google.inject.name.Named;
 
 @Singleton

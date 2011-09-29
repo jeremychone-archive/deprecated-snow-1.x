@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.inject.Named;
 import javax.servlet.ServletContext;
 
 import org.slf4j.Logger;
@@ -30,8 +31,8 @@ import org.snowfk.web.renderer.freemarker.WebBundleDirective;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.internal.Nullable;
-import com.google.inject.name.Named;
+import org.snowfk.Nullable;
+
 
 import freemarker.cache.FileTemplateLoader;
 import freemarker.cache.MultiTemplateLoader;
@@ -63,6 +64,7 @@ public class FreemarkerRenderer implements Renderer {
 
     @Inject
     public FreemarkerRenderer(@Named("snow.snowFolder") File snowFolder, WebApplication webApplication) {
+    //public FreemarkerRenderer(File snowFolder, WebApplication webApplication) {
         this.sfkFolder = snowFolder;
         this.webApplication = webApplication;
     }
