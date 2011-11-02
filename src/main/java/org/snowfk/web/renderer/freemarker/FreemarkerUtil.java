@@ -87,19 +87,30 @@ public class FreemarkerUtil {
         return null;
     }
     
-    
+    /**
+     * Return the freemarker friendly path name for this part. Returns null if the resourceFile does not exists
+     * 
+     * @param part
+     * @return
+     */
     public static final String getTemplateNameFromPart(Part part) {
 
         // get the Template name
-
-        String resourcePath = part.getResourceFile().getAbsolutePath();
-        //SystemOutUtil.printValue("FreemarkerPartProcessor.processPart resourcePath", resourcePath);
-        File templateFile = new File(resourcePath);
-        String templateName = resourcePath;
-        //FIXME: THIS IS A HORRIBLE HACK (test if we have a windows naming convention C: or E: and remove it)
-        if (resourcePath.length() > 2 && resourcePath.charAt(1) == ':') {
-            templateName = templateFile.getPath().substring(2);
+        File resourceFile = part.getResourceFile();
+        
+        if (resourceFile.exists()){
+            String resourcePath = part.getResourceFile().getAbsolutePath();
+            //SystemOutUtil.printValue("FreemarkerPartProcessor.processPart resourcePath", resourcePath);
+            File templateFile = new File(resourcePath);
+            String templateName = resourcePath;
+            //FIXME: THIS IS A HORRIBLE HACK (test if we have a windows naming convention C: or E: and remove it)
+            if (resourcePath.length() > 2 && resourcePath.charAt(1) == ':') {
+                templateName = templateFile.getPath().substring(2);
+            }
+            return templateName;            
+        }else{
+            return null;
         }
-        return templateName;
+
     }
 }

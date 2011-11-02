@@ -43,6 +43,7 @@ import org.snowfk.web.renderer.freemarker.PartCacheManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 
 @Singleton
 public class WebController {
@@ -52,7 +53,7 @@ public class WebController {
     private static final String         MODEL_KEY_REQUEST           = "r";
     public static int                   BUFFER_SIZE                 = 2048 * 2;
 
-    private WebApplication webApplication;
+    private WebApplication              webApplication;
 
     private ServletFileUpload           fileUploader;
     private ServletContext              servletContext;
@@ -69,6 +70,9 @@ public class WebController {
                                                                         }
                                                                     };
 
+    // will be injected from .properties file
+    private boolean                     ignoreTemplateNotFound      = false;
+
     @Inject
     public WebController(WebApplication webApplication, @Nullable ServletContext servletContext,
                             @Nullable HibernateHandler hibernateHandler, PartCacheManager partCacheManager,
@@ -83,6 +87,14 @@ public class WebController {
 
     public CurrentRequestContextHolder getCurrentRequestContextHolder() {
         return currentRequestContextHolder;
+    }
+
+    // --------- Injects --------- //
+    @Inject(optional = true)
+    public void injectIgnoreTemplateNotFound(@Named("snow.ignoreTemplateNotFound") String ignore) {
+        if ("true".equalsIgnoreCase(ignore)) {
+            ignoreTemplateNotFound = true;
+        }
     }
 
     public void init() {
@@ -200,10 +212,9 @@ public class WebController {
 
                 String content = null;
 
-                if (webBundleManager.isWebBundlePart(part)){
+                if (webBundleManager.isWebBundlePart(part)) {
                     content = webBundleManager.getContent(part);
                 }
-                
 
                 if (content != null) {
                     serviceStatic(rc, href, content, null);
@@ -214,8 +225,8 @@ public class WebController {
                 }
             }
 
-        // this catch is for when this exception is thrown prior to entering the web handler method.
-        // (e.g. a WebHandlerMethodInterceptor).
+            // this catch is for when this exception is thrown prior to entering the web handler method.
+            // (e.g. a WebHandlerMethodInterceptor).
         } catch (AbortWithHttpStatusException e) {
 
             sendHttpError(rc, e.getStatus(), e.getMessage());
@@ -223,21 +234,18 @@ public class WebController {
         } catch (AbortWithHttpRedirectException e) {
 
             sendHttpRedirect(rc, e);
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
                 e = e.getCause();
             }
 
             // and now we have to double-handle this one b/c it will be propagated as an InvocationTargetException
             // when it's thrown from within a web handler.
-            if(e instanceof AbortWithHttpStatusException) {
+            if (e instanceof AbortWithHttpStatusException) {
                 sendHttpError(rc, ((AbortWithHttpStatusException) e).getStatus(), e.getMessage());
-            }
-            else if(e instanceof AbortWithHttpRedirectException) {
+            } else if (e instanceof AbortWithHttpRedirectException) {
                 sendHttpRedirect(rc, (AbortWithHttpRedirectException) e);
-            }
-            else {
+            } else {
                 // and this is the normal case...
                 sendHttpError(rc, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
                 logger.error(getLogErrorString(e));
@@ -277,14 +285,15 @@ public class WebController {
 
         rootModel.put(MODEL_KEY_REQUEST, ContextModelBuilder.buildRequestModel(rc));
 
-        // check for a file not found condition.  if so, then we return control to the servlet container.
-        if(part.getFormatType() == Part.FormatType.freemarker && !webApplication.getPart(part.getPri()).getResourceFile().exists()) {
+        // check for a file not found condition. if so, then we return control to the servlet container.
+        if (!ignoreTemplateNotFound && part.getFormatType() == Part.FormatType.freemarker && !webApplication.getPart(part.getPri()).getResourceFile().exists()) {
             sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
             return;
         }
 
         /* --------- Set Headers --------- */
-        res.setContentType(part.getFormatType() == Part.FormatType.json ? "application/json" : "text/html;charset=" + CHAR_ENCODING);
+        res.setContentType(part.getFormatType() == Part.FormatType.json ? "application/json"
+                                : "text/html;charset=" + CHAR_ENCODING);
 
         // if not cachable, then, set the appropriate headers.
         res.setHeader("Pragma", "No-cache");
@@ -349,22 +358,22 @@ public class WebController {
             final long CACHE_DURATION_IN_MS = CACHE_DURATION_IN_SECOND * 1000;
             long now = System.currentTimeMillis();
 
-            // this is a tomcat workaround.  tomcat automatically adds Pragma: no-cache if there's
-            // the header isn't set during the request.  there's also a workaround to disable this
+            // this is a tomcat workaround. tomcat automatically adds Pragma: no-cache if there's
+            // the header isn't set during the request. there's also a workaround to disable this
             // behavior, but it requires changes to the context.xml (the one deployed to the server
             // directory...it doesn't work on a context.xml deployed in the META-INF directory).
             //
             // Pragma is an implementation-dependant header that only made it into the HTTP spec due
-            // to widespread adoption of the "no-cache" values.  the spec only defines behavior for that
+            // to widespread adoption of the "no-cache" values. the spec only defines behavior for that
             // one value, and setting it to anything else has no affect.
             //
             // we set a value here that corresponds to our Cache-Control, and this seems
-            // to get tomcat to not clobber things.  it has no real effect with browsers.
-            if(StringUtils.stripToEmpty(rc.getServletContext().getServerInfo()).toLowerCase().contains("tomcat")) {
+            // to get tomcat to not clobber things. it has no real effect with browsers.
+            if (StringUtils.stripToEmpty(rc.getServletContext().getServerInfo()).toLowerCase().contains("tomcat")) {
                 res.setHeader("Pragma", "public");
             }
 
-            // for tomcat, calling set header here  is of utmost importance.  just like it will add Pragma headers,
+            // for tomcat, calling set header here is of utmost importance. just like it will add Pragma headers,
             // it will also put a no-cache in unless we call *set* instead of *add*.
             res.setHeader("Cache-Control", "public,max-age=" + CACHE_DURATION_IN_SECOND + ",must-revalidate");
             res.setDateHeader("Last-Modified", now);
@@ -436,25 +445,24 @@ public class WebController {
 
     }
 
-
     private void sendHttpError(RequestContext rc, int errorCode, String message) throws IOException {
 
-        // if the response has already been committed, there's not much we can do about it at this point...just let it go.
+        // if the response has already been committed, there's not much we can do about it at this point...just let it
+        // go.
         // the one place where the response is likely to be committed already is if the exception causing the error
-        // originates while processing a template.  the template will usually have already output enough html so that
+        // originates while processing a template. the template will usually have already output enough html so that
         // the container has already started writing back to the client.
-        if(!rc.getRes().isCommitted()) {
+        if (!rc.getRes().isCommitted()) {
             rc.getRes().sendError(errorCode, message);
         }
     }
 
-
     private void sendHttpRedirect(RequestContext rc, AbortWithHttpRedirectException e) throws IOException {
 
-        // like above, there's not much we can do if the response has already been committed.  in that case,
+        // like above, there's not much we can do if the response has already been committed. in that case,
         // we'll just silently ignore the exception.
         HttpServletResponse response = rc.getRes();
-        if(!response.isCommitted()) {
+        if (!response.isCommitted()) {
             response.setStatus(e.getRedirectCode());
             response.addHeader("Location", e.getLocation());
         }

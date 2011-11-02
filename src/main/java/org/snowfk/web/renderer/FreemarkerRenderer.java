@@ -169,11 +169,15 @@ public class FreemarkerRenderer implements Renderer {
         }
 
         Map model = (Map) data;
+        
         String templateName = FreemarkerUtil.getTemplateNameFromPart(part);
-
-        Template template = conf.getTemplate(templateName);
-
-        template.process(model, out);
+        
+        if (templateName != null){
+            Template template = conf.getTemplate(templateName);
+            template.process(model, out);
+        }else{
+            // DO nothing, if we are here, the flag ignoreTemplateNotFound was set to true, so, it is expected to silently ignore.
+        }
 
     }
 
