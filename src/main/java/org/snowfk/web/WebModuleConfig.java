@@ -22,6 +22,7 @@ import com.google.inject.name.Names;
 public class WebModuleConfig extends AbstractModule {
 
     private Properties     properties;
+    @SuppressWarnings("unused")
     private WebApplication webApplication;
 
     protected void configure() {

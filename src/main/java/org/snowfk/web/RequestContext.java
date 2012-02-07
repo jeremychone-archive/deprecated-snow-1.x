@@ -375,7 +375,11 @@ public class RequestContext {
                         Object value;
                         Class paramBaseClass;
                         if(fileItem.isFormField()) {
-                            value = fileItem.getString();
+                            try {
+                                value = fileItem.getString("UTF-8");
+                            } catch (UnsupportedEncodingException e) {
+                                value = fileItem.getString();
+                            }
                             paramBaseClass = String.class;
                         }
                         else {
