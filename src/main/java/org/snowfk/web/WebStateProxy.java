@@ -8,6 +8,8 @@ public class WebStateProxy{
     }
     
     public WebStateHandle get(String stateContext){
-        return rc.getWebState(stateContext);
+        // FIXME: needs to add back 
+        return null;
+        //return rc.getWebState(stateContext);
     }
 }

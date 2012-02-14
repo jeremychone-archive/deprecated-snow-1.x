@@ -1,8 +1,9 @@
 package org.snowfk.test.app.simpleapp;
 
-import org.snowfk.web.WebModuleConfig;
+import com.google.inject.AbstractModule;
 
-public class SimpleAppConfig extends WebModuleConfig {
+
+public class SimpleAppConfig extends AbstractModule {
 
     @Override
     protected void configure() {

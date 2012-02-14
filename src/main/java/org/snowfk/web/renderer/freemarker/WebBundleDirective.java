@@ -16,9 +16,8 @@ import java.util.Map;
 
 import org.snowfk.SnowRuntimeException;
 import org.snowfk.util.ObjectUtil;
+import org.snowfk.web.PathFileResolver;
 import org.snowfk.web.RequestContext;
-import org.snowfk.web.WebApplication;
-import org.snowfk.web.part.Part;
 import org.snowfk.web.renderer.WebBundleManager;
 
 import com.google.inject.Inject;
@@ -42,14 +41,11 @@ public class WebBundleDirective implements TemplateDirectiveModel {
         css, js
     };
 
-    private WebApplication webApplication;
-    private WebBundleManager webBundleManager;
-    
     @Inject
-    public WebBundleDirective(WebApplication webApplication,WebBundleManager webBundleManager){
-        this.webApplication = webApplication;
-        this.webBundleManager = webBundleManager;
-    }
+    private WebBundleManager webBundleManager;
+    @Inject
+    private PathFileResolver pathFileResolver;
+    
     
     @Override
     public void execute(Environment env, Map args, TemplateModel[] tms, TemplateDirectiveBody body)
@@ -88,10 +84,13 @@ public class WebBundleDirective implements TemplateDirectiveModel {
 
         BufferedWriter bw = new BufferedWriter(env.getOut());
         
-        Part part = webApplication.getPart(path);
-        File folder = part.getResourceFile();
+        //Part part = webApplication.getPart(path);
+        //File folder = part.getResourceFile();
+        String resourcePath = rc.getResourcePath();
+        File folder = pathFileResolver.resolve(resourcePath).getParentFile();
+        
         if (!folder.exists()){
-            throw new SnowRuntimeException(Alert.NOT_VALID_WEBBUNDLE_PATH,"path",path);
+            throw new SnowRuntimeException(Alert.NOT_VALID_WEBBUNDLE_PATH,"path",folder.getAbsolutePath());
         }
         
         StringBuilder sb = new StringBuilder();
@@ -102,7 +101,6 @@ public class WebBundleDirective implements TemplateDirectiveModel {
             for (File file : files){
                 sb.append(buildHtmlTag(webPath + file.getName(), type));
             }
-            
         }
         //if not debug mode, then, include the "_web_bundle_all..."
         else{

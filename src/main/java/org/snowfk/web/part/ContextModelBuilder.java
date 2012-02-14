@@ -67,25 +67,7 @@ public class ContextModelBuilder {
         requestMap.put(MODEL_KEY_FULL_PATH, fullPathSB.toString());
 
         /* --------- Include the Request Params --------- */
-        HashMap<String, Object> paramsMap = new HashMap<String, Object>();
-        requestMap.put(MODEL_KEY_PARAMS, paramsMap);
-
-        Enumeration paramKeys = request.getParameterNames();
-
-        while (paramKeys.hasMoreElements()) {
-            String paramKey = (String) paramKeys.nextElement();
-            String[] values = request.getParameterValues(paramKey);
-
-            // if it is an Array, then add the array
-            if (values.length > 1) {
-                paramsMap.put(paramKey, values);
-            }
-            // otherwise, if there is only one value, just add the values
-            else if (values.length == 1) {
-                paramsMap.put(paramKey, values[0]);
-            }
-
-        }
+        requestMap.put(MODEL_KEY_PARAMS, rc.getParamMap());
         /* --------- /Include the Request Params --------- */
 
         String queryString = request.getQueryString();
