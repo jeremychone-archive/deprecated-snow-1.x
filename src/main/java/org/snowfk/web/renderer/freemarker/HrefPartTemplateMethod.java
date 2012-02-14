@@ -6,9 +6,8 @@ package org.snowfk.web.renderer.freemarker;
 
 import java.util.List;
 
+import org.snowfk.util.FileUtil;
 import org.snowfk.web.*;
-import org.snowfk.web.part.Part;
-import org.snowfk.web.part.HttpPriResolver;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -20,27 +19,24 @@ import static org.snowfk.web.renderer.freemarker.FreemarkerUtil.getParam;
 @Singleton
 public class HrefPartTemplateMethod implements TemplateMethodModelEx {
 
-    WebApplication webApplication;
+    @Inject
+    Application webApplication;
+    @Inject
     CurrentRequestContextHolder currentRCHolder;
 
-    @Inject
-    public HrefPartTemplateMethod(WebApplication webApplication,CurrentRequestContextHolder currentRCHolder){
-        this.webApplication = webApplication;
-        this.currentRCHolder = currentRCHolder;
-    }
-
-    
     @Override
     public Object exec(List args) throws TemplateModelException {
 
-        String pri = getParam(args.get(0),String.class);
+        String path = getParam(args.get(0),String.class);
         
-        String contextPath = currentRCHolder.getCurrentRequestContext().getContextPath();
-        Part part = webApplication.getPart(pri);
+        RequestContext rc = currentRCHolder.getCurrentRequestContext();
         
-        String hrefPart =  HttpPriResolver.getHrefForPart(part);
-        hrefPart = new StringBuilder(contextPath).append(hrefPart).toString();
-        return hrefPart;
+        String contextPath = rc.getContextPath();
+        
+        path = FileUtil.encodeFileName(path);
+        
+        String href = new StringBuilder(contextPath).append(path).toString();
+        return href;
     }
 
 }

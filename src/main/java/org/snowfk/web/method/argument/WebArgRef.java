@@ -90,20 +90,23 @@ public class WebArgRef {
                 value = rc.getAuth().getUser();
             }
         } else if (webState != null){
-            value = rc.getWebState(webState.value());
+            // FIXME: needs to add webState back
+            //value = rc.getWebState(webState.value());
         }else if (webEntity != null){
-            String paramName = webEntity.value();
+            // FIXME: needs to fix that. 
+            //String paramName = webEntity.value();
             //FIXME: FOR NOW ONLY support LONG for WebEntity. THIS NEED TO BE FIXED!
-            Long entityId = rc.getParam(paramName,Long.class);
-            value = rc.getEntity(paramClass, entityId);
+            //Long entityId = rc.getParam(paramName,Long.class);
+            //value = rc.getEntity(paramClass, entityId);
+            
         } else if (webPath != null) {
             //if the index has been set, then, return the single Path and convert to the appropriate type.
             if (webPath.value() > -1) {
-                value = rc.getCurrentPriPathAt(webPath.value(), paramClass, null);
+                value = rc.getResourcePathAt(webPath.value(), paramClass, null);
             }
             //otherwise, return the full path
             else {
-                value = rc.getCurrentPriFullPath();
+                value = rc.getResourcePath();
             }
         } else if (webParameterParser != null) {
             value = webParameterParser.getParameterValue(m, webParameterAnnotation, paramClass, rc);

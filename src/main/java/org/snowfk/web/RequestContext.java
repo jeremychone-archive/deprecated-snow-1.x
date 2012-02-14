@@ -4,17 +4,14 @@
 package org.snowfk.web;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.Cookie;
@@ -30,9 +27,6 @@ import org.snowfk.util.HttpRequestUtil;
 import org.snowfk.util.MapUtil;
 import org.snowfk.util.ObjectUtil;
 import org.snowfk.web.auth.Auth;
-import org.snowfk.web.db.hibernate.HibernateDaoHelper;
-import org.snowfk.web.part.Part;
-import org.snowfk.web.part.PriUtil;
 
 public class RequestContext {
     static private Logger logger = LoggerFactory.getLogger(RequestContext.class);
@@ -53,7 +47,8 @@ public class RequestContext {
     private Map<String, String> cookieMap;
     private Map<String,WebStateHandle> webStateMap;
 
-    private Part                currentPart;
+    private String              resourcePath;
+    private String              framePath;
 
     //this is the roo model for the container the "r" map (for the request) and "m" for the model (i.e. WebMap)
     private Map                 rootModel             = new HashMap();
@@ -72,21 +67,6 @@ public class RequestContext {
     //set by AuthService.authRequest
     private Auth<?>             auth;
 
-    private Queue<WebModule>    currentWebModuleStack = new LinkedList<WebModule>();
-
-    /**
-     * Shortcut way to create a RequestContext object, usually for testing
-     * purpose.
-     * 
-     * @param part
-     * @param paramMap
-     */
-    public RequestContext(Part part, Map<String, Object> paramMap) {
-        setCurrentPart(part);
-        this.paramMap = paramMap;
-        isParamInitialized = true;
-        init();
-    }
 
     public RequestContext(HttpServletRequest req, HttpServletResponse res, ServletContext servletContext,
                           ServletFileUpload fileUploader) {
@@ -97,7 +77,7 @@ public class RequestContext {
         init();
     }
 
-    private void init() {
+    protected void init() {
         rootModel.put("m", webMap);
     }
 
@@ -150,39 +130,15 @@ public class RequestContext {
 
     // --------- /Bean Methods --------- //    
 
-    // --------- currentWebModuleStack Methods --------- //
-    public WebModule pushCurrentWebModule(WebModule currentWebModule) {
-        currentWebModuleStack.offer(currentWebModule);
-        return currentWebModule;
-    }
-    
-    public WebModule pollCurrentWebModule() {
-        return currentWebModuleStack.poll();
-    }
-    
-    public WebModule peekCurrentWebModule(){
-        return currentWebModuleStack.peek();
-    }
-    // --------- /currentWebModuleStack Methods --------- //
-    
-    // --------- Entity & DaoHelper --------- //
-    public <T> T getEntity(Class<T> entityClass,Serializable id){
-        T t = null;
-        if (entityClass != null && id != null){
-            WebModule currentWebModule = peekCurrentWebModule();
-            if (currentWebModule != null){
-                HibernateDaoHelper daoHelper = currentWebModule.getHibernateDaoHelper();
-                if (daoHelper != null){
-                    t = daoHelper.get(entityClass, id);
-                }
-            }
-        }
-        return t;
-    }
-    // --------- Entity & DaoHelper --------- //
     
     /*--------- Param Methods ---------*/
-
+    
+    // mostly for Mock objects
+    protected void setParamMap(Map<String,Object> paramMap){
+        this.paramMap = paramMap;
+        isParamInitialized = true;
+    }
+    
     public Map<String, Object> getParamMap() {
         initParamsIfNeeded();
         return paramMap;
@@ -504,105 +460,87 @@ public class RequestContext {
      * @param stateContext
      * @return return a WebState for a given uiContext. Never return null.
      */
+    /* TODO: needs to implement WebStateHandler
     public WebStateHandle getWebState(String stateContext){
         if (webStateMap == null){
             webStateMap = new HashMap<String, WebStateHandle>();
         }
         WebStateHandle webState = webStateMap.get(stateContext);
         if (webState == null){
-            webState = peekCurrentWebModule().getWebStateHandleFactory().constructWebStateHandle(stateContext, this);
+            webState = getWebStateHandleFactory().constructWebStateHandle(stateContext, this);
             webStateMap.put(stateContext, webState);
         }
         return webState;
     }
+    */
     // --------- /WebState Methods --------- //    
     
-    /* --------- CurrentPriPathInfo Methods --------- */
-
-    public void setCurrentPart(Part part) {
-        currentPart = part;
+    // --------- Paths --------- //
+    
+    public String[] getResourcePaths(){
+        return splitPath(getResourcePath());
+    }
+    
+    public String getResourcePathAt(int i) {
+        return pathAt(getResourcePaths(),i);
     }
 
-    public Part getCurrentPart() {
-        return currentPart;
+    public <T> T getResourcePathAt(int i, Class<T> cls) {
+        return pathAt(getResourcePaths(),i, cls, null);
     }
 
-    public String getCurrentPri() {
-        return (currentPart != null) ? currentPart.getPri() : null;
+    public <T> T getResourcePathAt(int i, Class<T> cls, T defaultValue) {
+        return pathAt(getResourcePaths(),i, cls, defaultValue);
+    }
+    
+    public String getResourcePath() {
+        return resourcePath;
     }
 
-    /**
-     * @return The array of path from after the contextPath
-     */
-    public String[] getCurrentPriPaths() {
-        String[] currentPriPaths = null;
-        if (getCurrentPri() != null) {
+    public void setResourcePath(String resourcePath) {
+        this.resourcePath = resourcePath;
+    }
 
-            String priPath = getCurrentPriFullPath();
-            String[] tmpPriPaths = priPath.split("/");
-            // remove the first element (always empty since the currentPri
-            // start starts with "/")
-            if (tmpPriPaths.length > 1) {
-                currentPriPaths = new String[tmpPriPaths.length - 1];
-                if (tmpPriPaths.length > 1) {
-                    System.arraycopy(tmpPriPaths, 1, currentPriPaths, 0, currentPriPaths.length);
-                }
-            } else {
-                currentPriPaths = new String[0];
+    public String getFramePath() {
+        return framePath;
+    }
+
+    public void setFramePath(String framePath) {
+        this.framePath = framePath;
+    }
+    // --------- /Paths --------- //
+    
+    // TODO: probably does not need to be that complicated. Might want to use Guava here. 
+    static private String[] splitPath(String path){
+        String[] paths = null;
+        String[] tmpPaths = path.split("/");
+        // remove the first element (always empty since the currentPri
+        // start starts with "/")
+        if (tmpPaths.length > 1) {
+            paths = new String[tmpPaths.length - 1];
+            if (tmpPaths.length > 1) {
+                System.arraycopy(tmpPaths, 1, paths, 0, paths.length);
             }
         } else {
-            currentPriPaths = new String[0];
+            paths = new String[0];
         }
-        return currentPriPaths;
+        return paths;         
     }
-
-    /**
-     * @param i
-     * @return Safely return the path at a given index. If it does not exists,
-     *         return null;
-     */
-    public String getCurrentPriPathAt(int i) {
-        String[] paths = getCurrentPriPaths();
+    
+    static private String pathAt(String[] paths,int i){
         if (paths.length > i) {
             return paths[i];
         } else {
             return null;
         }
     }
-
-    public <T> T getCurrentPriPathAt(int i, Class<T> cls) {
-        return getCurrentPriPathAt(i, cls, null);
-    }
-
-    public <T> T getCurrentPriPathAt(int i, Class<T> cls, T defaultValue) {
-        String valueStr = getCurrentPriPathAt(i);
+    
+    public <T> T pathAt(String[] paths,int i, Class<T> cls, T defaultValue) {
+        String valueStr = pathAt(paths,i);
         return ObjectUtil.getValue(valueStr, cls, defaultValue);
     }
-
-    public String getCurrentLastPriPath() {
-        String[] paths = getCurrentPriPaths();
-        if (paths != null && paths.length > 1) {
-            return paths[paths.length - 1];
-        } else {
-            return null;
-        }
-    }
-
-    public String getCurrentPriFullPath() {
-        String currentPri = getCurrentPri();
-        String priPath = currentPri;
-        if (currentPri != null) {
-            int idx = currentPri.lastIndexOf(':');
-
-            if (idx != -1) {
-                priPath = currentPri.substring(idx + 1);
-            }
-        }
-        return priPath;
-    }
-
-    /* --------- /CurrentPriPathInfo Methods --------- */
-
+    
+    
     /*--------- Writer ---------*/
     public void setWriter(Writer writer) {
         this.writer = writer;
@@ -622,7 +560,6 @@ public class RequestContext {
             return null;
         }
     }
-
     /*--------- /Writer ---------*/
 
     /*--------- RootModel ---------*/
@@ -713,10 +650,6 @@ public class RequestContext {
                         logger.error(e.getMessage());
                     }
                 }
-            }
-            //if there is not request, take the pri path as pathInfo
-            else if (currentPart != null) {
-                pathInfo = PriUtil.getPathFromPri(currentPart.getPri());
             }
         }
         return pathInfo;

@@ -8,8 +8,7 @@ import java.util.Map;
 
 import org.snowfk.util.FileUtil;
 import org.snowfk.util.JsonUtil;
-import org.snowfk.web.part.Part;
-import org.snowfk.web.part.PartResolver;
+import org.snowfk.web.PathFileResolver;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -20,24 +19,19 @@ import freemarker.template.TemplateModelException;
 @Singleton
 public class ParseJsonTemplateMethod implements TemplateMethodModelEx {
 
-    PartResolver partResolver;
-    
     @Inject
-    public ParseJsonTemplateMethod(PartResolver partResolver){
-        this.partResolver = partResolver;
-    }
+    private PathFileResolver pathFileResolver;
     
     @Override
     public Object exec(List args) throws TemplateModelException {
         Map result = null;
-        String toParse = getParam(args.get(0), String.class);
+        String path = getParam(args.get(0), String.class);
 
-        if (toParse != null) {
+        if (path != null) {
             
-            //today, assume it is a path to a part
-            Part part = partResolver.getPartFromPri(toParse);
             
-            File jsonFile = part.getResourceFile();
+            
+            File jsonFile = pathFileResolver.resolve(path);
             
             if (jsonFile.exists()){
                 String json = FileUtil.getFileContentAsString(jsonFile);

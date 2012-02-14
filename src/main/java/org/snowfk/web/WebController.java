@@ -1,19 +1,10 @@
-/* Copyright 2009 Jeremy Chone - Licensed under the Apache License, Version 2.0
- * http://www.apache.org/licenses/LICENSE-2.0
- */
 package org.snowfk.web;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
@@ -24,22 +15,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snowfk.annotation.Nullable;
 import org.snowfk.util.FileUtil;
 import org.snowfk.util.MapUtil;
 import org.snowfk.web.auth.Auth;
 import org.snowfk.web.auth.AuthService;
-import org.snowfk.web.db.hibernate.HibernateHandler;
+import org.snowfk.web.db.hibernate.HibernateSessionInViewHandler;
 import org.snowfk.web.part.ContextModelBuilder;
-import org.snowfk.web.part.CustomFramePriPath;
-import org.snowfk.web.part.HttpPriResolver;
-import org.snowfk.web.part.Part;
-import org.snowfk.web.part.PriUtil;
 import org.snowfk.web.renderer.WebBundleManager;
-import org.snowfk.web.renderer.freemarker.PartCacheManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -47,43 +31,61 @@ import com.google.inject.name.Named;
 
 @Singleton
 public class WebController {
-    static private Logger               logger                      = LoggerFactory.getLogger(WebController.class);
+    static private Logger                 logger                        = LoggerFactory.getLogger(WebController.class);
+    
+    public enum ResponseType{
+        template,json,other;
+    }
 
-    private static final String         CHAR_ENCODING               = "UTF-8";
-    private static final String         MODEL_KEY_REQUEST           = "r";
-    public static int                   BUFFER_SIZE                 = 2048 * 2;
+    private static final String           CHAR_ENCODING                 = "UTF-8";
+    private static final String           MODEL_KEY_REQUEST             = "r";
+    public static int                     BUFFER_SIZE                   = 2048 * 2;
 
-    private WebApplication              webApplication;
-
-    private ServletFileUpload           fileUploader;
-    private ServletContext              servletContext;
-    private HibernateHandler            hibernateHandler;
-    private WebBundleManager            webBundleManager;
-
-    private ThreadLocal<RequestContext> requestContextTl            = new ThreadLocal<RequestContext>();
-
-    private CurrentRequestContextHolder currentRequestContextHolder = new CurrentRequestContextHolder() {
-                                                                        @Override
-                                                                        public RequestContext getCurrentRequestContext() {
-
-                                                                            return requestContextTl.get();
-                                                                        }
-                                                                    };
-
-    // will be injected from .properties file
-    private boolean                     ignoreTemplateNotFound      = false;
+    private ServletFileUpload             fileUploader;
 
     @Inject
-    public WebController(WebApplication webApplication, @Nullable ServletContext servletContext,
-                            @Nullable HibernateHandler hibernateHandler, PartCacheManager partCacheManager,
-                            WebBundleManager webBundleManager) {
+    private HttpWriter                    httpWriter;
 
-        this.webApplication = webApplication;
-        this.servletContext = servletContext;
-        this.hibernateHandler = hibernateHandler;
-        this.webBundleManager = webBundleManager;
+    @Inject(optional=true)
+    private ServletContext                servletContext;
+    @Inject
+    private Application                   application;
+    @Inject
+    private WebBundleManager              webBundleManager;
 
-    }
+    @Inject(optional = true)
+    private AuthService                   authService;
+
+    @Inject(optional = true)
+    private HibernateSessionInViewHandler hibernateSessionInViewHandler = null;
+
+    @Inject(optional = true)
+    private RequestLifeCycle              requestLifeCycle              = null;
+
+    @Inject
+    private FramePathResolver             framePathResolver;
+
+    @Inject
+    private ResourcePathResolver          resourcePathResolver;
+
+    @Inject
+    private PathFileResolver              pathFileResolver;
+
+    @Inject
+    private ActionNameResolver            actionNameResolver;
+
+    private ThreadLocal<RequestContext>   requestContextTl              = new ThreadLocal<RequestContext>();
+
+    private CurrentRequestContextHolder   currentRequestContextHolder   = new CurrentRequestContextHolder() {
+                                                                            @Override
+                                                                            public RequestContext getCurrentRequestContext() {
+
+                                                                                return requestContextTl.get();
+                                                                            }
+                                                                        };
+
+    // will be injected from .properties file
+    private boolean                       ignoreTemplateNotFound        = false;
 
     public CurrentRequestContextHolder getCurrentRequestContextHolder() {
         return currentRequestContextHolder;
@@ -98,7 +100,7 @@ public class WebController {
     }
 
     public void init() {
-        webApplication.init();
+        application.init();
 
         /* --------- Initialize the FileUploader --------- */
         // Create a factory for disk-based file items
@@ -112,7 +114,7 @@ public class WebController {
     }
 
     public void destroy() {
-        webApplication.shutdown();
+        application.shutdown();
     }
 
     public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -120,18 +122,40 @@ public class WebController {
         response.setCharacterEncoding(CHAR_ENCODING);
 
         RequestContext rc = new RequestContext(request, response, servletContext, fileUploader);
+        service(rc);
+    }
+    
+    public void service(RequestContext rc) throws Exception{
+        
         requestContextTl.set(rc);
+        
+        HttpServletRequest request = rc.getReq();
+        ResponseType responseType = null;
+        
+        String resourcePath = resourcePathResolver.resolve(rc);
+                
+        
+        if (isTemplatePath(resourcePath)) {
+            String framePath = framePathResolver.resolve(rc);
+            rc.setFramePath(framePath);
+            rc.setResourcePath(fixTemplateAndJsonResourcePath(resourcePath));
+            responseType = ResponseType.template;
+        } else if (isJsonPath(resourcePath)) {
+            rc.setResourcePath(fixTemplateAndJsonResourcePath(resourcePath));
+            responseType = ResponseType.json;
+        } else {
+            responseType = ResponseType.other;
+            rc.setResourcePath(resourcePath);
+        }        
+        
         try {
             // --------- Open HibernateSession --------- //
-            if (hibernateHandler != null) {
-                hibernateHandler.openSessionInView();
+            if (hibernateSessionInViewHandler != null) {
+                hibernateSessionInViewHandler.openSessionInView();
             }
-
             // --------- /Open HibernateSession --------- //
 
             // --------- Auth --------- //
-
-            AuthService authService = webApplication.getDefaultWebModule().getAuthService();
             if (authService != null) {
                 Auth<?> auth = authService.authRequest(rc);
                 rc.setAuth(auth);
@@ -139,25 +163,18 @@ public class WebController {
             // --------- /Auth --------- //
 
             // --------- RequestLifeCycle Start --------- //
-            for (WebModule webModule : webApplication.getWebModules()) {
-                RequestLifeCycle rlc = webModule.getRequestLifeCycle();
-                if (rlc != null) {
-                    rlc.start(rc);
-                }
+            if (requestLifeCycle != null) {
+                requestLifeCycle.start(rc);
             }
             // --------- /RequestLifeCycle Start --------- //
 
             // --------- Processing the Post (if any) --------- //
-
             if ("POST".equals(request.getMethod())) {
-                String ari = rc.getParam("action");
-                if (ari == null) {
-                    ari = rc.getParam("method");
-                }
-                if (ari != null) {
+                String actionName = actionNameResolver.resolve(rc);
+                if (actionName != null) {
                     WebActionResponse webActionResponse = null;
                     try {
-                        webActionResponse = webApplication.processWebAction(ari, rc);
+                        webActionResponse = application.processWebAction(actionName, rc);
 
                     } catch (Throwable e) {
                         if (e instanceof InvocationTargetException) {
@@ -169,70 +186,32 @@ public class WebController {
                     }
                     rc.setWebActionResponse(webActionResponse);
                 }
+
+                // --------- afterActionProcessing --------- //
+                if (hibernateSessionInViewHandler != null) {
+                    hibernateSessionInViewHandler.afterActionProcessing();
+                }
+                // --------- /afterActionProcessing --------- //
             }
             // --------- /Processing the Post (if any) --------- //
-
-            String[] priPair = HttpPriResolver.getPriPairFromRequest(rc, webApplication.getDefaultWebModuleName());
-
-            String pagePri = priPair[0];
-            String framePri = priPair[1];
-
-            // --------- Check if we have a CustomFrameProvider --------- //
-            if (framePri != null) {
-                WebModule webModule = webApplication.getWebModule(PriUtil.getModuleNameFromPri(pagePri));
-                rc.pushCurrentWebModule(webModule);
-                CustomFramePriPath cfpri = webModule.getCustomeFramePriPath();
-                if (cfpri != null) {
-                    String pagePriPath = PriUtil.getPathFromPri(pagePri);
-                    String framePriPath = PriUtil.getPathFromPri(framePri);
-                    String newFramePriPath = cfpri.getFramePriPath(rc, pagePriPath, framePriPath);
-                    if (newFramePriPath != null) {
-                        framePri = PriUtil.updatePriPath(framePri, newFramePriPath);
-                    }
-                }
-                rc.pollCurrentWebModule();
-            }
-            // --------- /Check if we have a CustomFrameProvider --------- //
-
-            String pathInfo = rc.getPathInfo();
-            Part part = webApplication.getPart(pagePri, framePri);
-
-            if (HttpPriResolver.isTemplateContent(pathInfo) || HttpPriResolver.isJsonContent(pathInfo)) {
-                serviceTemplateOrJson(part, rc);
-            } else {
-
-                // // if the content is cache (could be the result of a [@links...) then just include the content
-                // FIXME: we should depracate this ASAP. This is a bad way to do concatenation. Does not work on
-                // round-robin
-                // String contextPath = request.getContextPath();
-                // String href = new StringBuilder(contextPath).append(pathInfo).toString();
-                // String content = partCacheManager.getContentForHref(href);
-                String contextPath = request.getContextPath();
-                String href = new StringBuilder(contextPath).append(pathInfo).toString();
-
-                String content = null;
-
-                if (webBundleManager.isWebBundlePart(part)) {
-                    content = webBundleManager.getContent(part);
-                }
-
-                if (content != null) {
-                    serviceStatic(rc, href, content, null);
-                }
-                // // Otherwise, service the part
-                else {
-                    serviceStatic(part, rc);
-                }
+            
+            switch(responseType){
+                case template: 
+                    serviceTemplate(rc);
+                    break;
+                case json:
+                    serviceJson(rc);
+                    break;
+                case other:
+                    serviceFallback(rc);
+                    break;
             }
 
             // this catch is for when this exception is thrown prior to entering the web handler method.
             // (e.g. a WebHandlerMethodInterceptor).
         } catch (AbortWithHttpStatusException e) {
-
             sendHttpError(rc, e.getStatus(), e.getMessage());
-
         } catch (AbortWithHttpRedirectException e) {
-
             sendHttpRedirect(rc, e);
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
@@ -252,22 +231,19 @@ public class WebController {
             }
 
         } finally {
-            // --------- RequestLifeCycle end --------- //
-            for (WebModule webModule : webApplication.getWebModules()) {
-                RequestLifeCycle rlc = webModule.getRequestLifeCycle();
-                if (rlc != null) {
-                    rlc.end(rc);
-                }
+            // --------- RequestLifeCycle End --------- //
+            if (requestLifeCycle != null) {
+                requestLifeCycle.end(rc);
             }
-            // --------- /RequestLifeCycle end --------- //
+            // --------- /RequestLifeCycle End --------- //
 
             // Remove the requestContext from the threadLocal
             // NOTE: might want to do that after the closeSessionInView.
             requestContextTl.remove();
 
-            // --------- /Close HibernateSession --------- //
-            if (hibernateHandler != null) {
-                hibernateHandler.closeSessionInView();
+            // --------- Close HibernateSession --------- //
+            if (hibernateSessionInViewHandler != null) {
+                hibernateSessionInViewHandler.closeSessionInView();
             }
             // --------- /Close HibernateSession --------- //
 
@@ -275,8 +251,8 @@ public class WebController {
 
     }
 
-    @SuppressWarnings("unchecked")
-    public void serviceTemplateOrJson(Part part, RequestContext rc) throws Throwable {
+    // --------- Service Request --------- //
+    private void serviceTemplate(RequestContext rc) throws Throwable {
         HttpServletRequest req = rc.getReq();
         HttpServletResponse res = rc.getRes();
 
@@ -285,15 +261,31 @@ public class WebController {
 
         rootModel.put(MODEL_KEY_REQUEST, ContextModelBuilder.buildRequestModel(rc));
 
-        // check for a file not found condition. if so, then we return control to the servlet container.
-        if (!ignoreTemplateNotFound && part.getFormatType() == Part.FormatType.freemarker && !webApplication.getPart(part.getPri()).getResourceFile().exists()) {
-            sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
-            return;
-        }
+        // TODO: needs to implement this
+        /*
+         * if (!ignoreTemplateNotFound && !webApplication.getPart(part.getPri()).getResourceFile().exists()) {
+         * sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null); return; }
+         */
+
+        res.setContentType("text/html;charset=" + CHAR_ENCODING);
+        // if not cachable, then, set the appropriate headers.
+        res.setHeader("Pragma", "No-cache");
+        res.setHeader("Cache-Control", "no-cache,no-store,max-age=0");
+        res.setDateHeader("Expires", 1);
+
+        application.processTemplate(rc);
+
+        rc.getWriter().close();
+
+    }
+
+    private void serviceJson(RequestContext rc) throws Throwable {
+        HttpServletRequest req = rc.getReq();
+        HttpServletResponse res = rc.getRes();
 
         /* --------- Set Headers --------- */
-        res.setContentType(part.getFormatType() == Part.FormatType.json ? "application/json"
-                                : "text/html;charset=" + CHAR_ENCODING);
+        req.setCharacterEncoding(CHAR_ENCODING);
+        res.setContentType("application/json");
 
         // if not cachable, then, set the appropriate headers.
         res.setHeader("Pragma", "No-cache");
@@ -301,149 +293,41 @@ public class WebController {
         res.setDateHeader("Expires", 1);
         /* --------- /Set Headers --------- */
 
-        if (part.getFormatType() == Part.FormatType.json) {
-            webApplication.processJsonPart(part, rc);
-        } else {
-            webApplication.processFreemarkerPart(part, rc);
-        }
+        application.processJson(rc);
 
         rc.getWriter().close();
-
     }
 
-    public void serviceStatic(Part part, RequestContext rc) throws Exception {
-        rc.setCurrentPart(part);
-        // first, try to process the part with the WebFile
-        boolean webFilePart = webApplication.processWebFilePart(part, rc);
-        // if it was not processed by a webFile, then, do the standard process.
-        if (!webFilePart) {
-            File resourceFile = part.getResourceFile();
-            String resourceFullPath = resourceFile.getAbsolutePath();
-            if (resourceFile.exists()) {
-                serviceStatic(rc, resourceFullPath, null, resourceFile);
-            } else {
-                sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
-            }
-        }
-    }
+    public void serviceFallback(RequestContext rc) throws Throwable {
 
-    private void serviceStatic(RequestContext rc, String fullPath, String resourceContent, File resourceFile)
-                            throws Exception {
+        String contextPath = rc.getContextPath();
+        String resourcePath = rc.getResourcePath();
 
-        // SystemOutUtil.printValue("RouterServlet serviceStatic pri", pri + " > " + part.getPri());
+        String href = new StringBuilder(contextPath).append(resourcePath).toString();
 
-        HttpServletResponse res = rc.getRes();
-
-        String contentType = servletContext.getMimeType(fullPath);
-        // if the servletContext (server) could not fine the mimeType, then, give a little help
-        if (contentType == null) {
-            contentType = FileUtil.getExtraMimeType(fullPath);
-        }
-        // long contentLength = -1L;
-        int realLength = 0;
-
-        /* --------- /Set Headers --------- */
-
-        // TODO: need to fix this with something more generic
-        if (isCachable(fullPath)) {
-            /*
-             * NOTE: for now we remove this, in the case of a CSS, we do not know the length, since it is a template
-             * contentLength = resourceFile.length();
-             * 
-             * if (contentLength < Integer.MAX_VALUE) { res.setContentLength((int) contentLength); } else {
-             * res.setHeader("content-length", "" + contentLength); }
-             */
-            // This content will expire in 1 hours.
-            final int CACHE_DURATION_IN_SECOND = 60 * 60 * 1; // 1 hours
-            final long CACHE_DURATION_IN_MS = CACHE_DURATION_IN_SECOND * 1000;
-            long now = System.currentTimeMillis();
-
-            // this is a tomcat workaround. tomcat automatically adds Pragma: no-cache if there's
-            // the header isn't set during the request. there's also a workaround to disable this
-            // behavior, but it requires changes to the context.xml (the one deployed to the server
-            // directory...it doesn't work on a context.xml deployed in the META-INF directory).
-            //
-            // Pragma is an implementation-dependant header that only made it into the HTTP spec due
-            // to widespread adoption of the "no-cache" values. the spec only defines behavior for that
-            // one value, and setting it to anything else has no affect.
-            //
-            // we set a value here that corresponds to our Cache-Control, and this seems
-            // to get tomcat to not clobber things. it has no real effect with browsers.
-            if (StringUtils.stripToEmpty(rc.getServletContext().getServerInfo()).toLowerCase().contains("tomcat")) {
-                res.setHeader("Pragma", "public");
-            }
-
-            // for tomcat, calling set header here is of utmost importance. just like it will add Pragma headers,
-            // it will also put a no-cache in unless we call *set* instead of *add*.
-            res.setHeader("Cache-Control", "public,max-age=" + CACHE_DURATION_IN_SECOND + ",must-revalidate");
-            res.setDateHeader("Last-Modified", now);
-            res.setDateHeader("Expires", now + CACHE_DURATION_IN_MS);
+        if (webBundleManager.isWebBundle(resourcePath)) {
+            String content = webBundleManager.getContent(resourcePath);
+            StringReader reader = new StringReader(content);
+            httpWriter.writeStringContent(rc, href, reader, false, null);
         } else {
-            res.setHeader("Pragma", "No-cache");
-            res.setHeader("Cache-Control", "no-cache,no-store,max-age=0");
-            res.setDateHeader("Expires", 1);
-        }
+            // First, see and process the eventual WebFileHandler
+            boolean webFileProcessed = application.processWebFile(rc);
 
-        /* --------- Set Headers --------- */
-        res.setContentType(contentType);
-        // Text based content
-        if (contentType != null && (contentType.startsWith("text") || contentType.indexOf("javascript") != -1)) {
-
-            Writer ow = null;
-            Reader reader = null;
-            if (resourceContent != null) {
-                reader = new StringReader(resourceContent);
-            } else {
-                reader = new FileReader(resourceFile);
-            }
-            try {
-
-                // create the reader/writer
-                ow = res.getWriter();
-
-                char[] buffer = new char[BUFFER_SIZE];
-                int readLength = reader.read(buffer);
-
-                while (readLength != -1) {
-                    realLength += readLength;
-                    ow.write(buffer, 0, readLength);
-                    readLength = reader.read(buffer);
+            // if not processed, then, default processing
+            if (!webFileProcessed) {
+                File resourceFile = pathFileResolver.resolve(resourcePath);
+                if (resourceFile.exists()) {
+                    boolean isCachable = isCachable(resourcePath);
+                    httpWriter.writeFile(rc, resourceFile, isCachable, null);
+                } else {
+                    sendHttpError(rc, HttpServletResponse.SC_NOT_FOUND, null);
                 }
-            } catch (Exception e) {
-                logger.error(e.getMessage());
-            } finally {
-                reader.close();
-                ow.close();
-            }
-        }
-        // binary based content (for now, suppoert only from resourceFile)
-        else {
-            OutputStream os = res.getOutputStream();
-            FileInputStream fis = new FileInputStream(resourceFile);
-            BufferedInputStream bis = new BufferedInputStream(fis);
-
-            try {
-                byte[] buffer = new byte[BUFFER_SIZE];
-                int len = buffer.length;
-                while (true) {
-                    len = bis.read(buffer);
-                    realLength += len;
-                    if (len == -1)
-                        break;
-                    os.write(buffer, 0, len);
-                }
-
-            } catch (Exception e) {
-                logger.error(e.getMessage());
-            } finally {
-                os.close();
-                fis.close();
-                bis.close();
             }
 
         }
-
     }
+
+    // --------- /Service Request --------- //
 
     private void sendHttpError(RequestContext rc, int errorCode, String message) throws IOException {
 
@@ -468,7 +352,40 @@ public class WebController {
         }
     }
 
+    
+    /*
+     * First the resourcePath by remove extension (.json or .ftl) and adding index if the path end with "/"
+     */
+    static private String fixTemplateAndJsonResourcePath(String resourcePath){
+        String path = FileUtil.getFileNameAndExtension(resourcePath)[0];
+        return path;
+    }
+    
     static Set cachableExtension = MapUtil.setIt(".css", ".js", ".png", ".gif", ".jpeg");
+
+    /**
+     * Return true if the content pointed by the pathInfo is static.<br>
+     * Right now, just return true if there is no extension
+     * 
+     * @param path
+     * @return
+     */
+    static private final boolean isTemplatePath(String path) {
+        
+        if (path.lastIndexOf('.') == -1 || path.endsWith(".ftl")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    static private final boolean isJsonPath(String path) {
+        if (path.endsWith(".json")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     static final private boolean isCachable(String pathInfo) {
         String ext = FileUtil.getFileNameAndExtension(pathInfo)[1];

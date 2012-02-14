@@ -31,23 +31,17 @@ public class SnowServlet extends HttpServlet {
         ServletContext servletContext = config.getServletContext();
         
         try {
-            File webInfFolder = new File(servletContext.getRealPath("WEB-INF/"));
-            File snowFolder = new File(webInfFolder, "snow");
+            File webAppFolder = new File(servletContext.getRealPath("WEB-INF/")).getParentFile();
+            ApplicationLoader appLoader = new ApplicationLoader(webAppFolder, servletContext);
             
-
-            
-            WebApplicationLoader appLoader = new WebApplicationLoader(snowFolder, servletContext);
             String appName = appLoader.getWebAppFolder().getName();
             System.out.println("==== Snow Application : " + appName + " ===========");
             appLoader.load();
             System.out.println("loading... done");
-            
             String appDir = servletContext.getInitParameter("appDir");
             if (appDir != null){
                 System.out.println("appDir: " + appDir);
             }
-            
-            
             webController = appLoader.getWebController();
             webController.init();
             System.out.println("init... done");

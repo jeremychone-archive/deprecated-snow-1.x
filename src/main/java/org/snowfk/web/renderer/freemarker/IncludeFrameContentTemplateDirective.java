@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.snowfk.web.RequestContext;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 
@@ -24,7 +25,9 @@ import freemarker.template.TemplateModel;
 public class IncludeFrameContentTemplateDirective extends IncludeTemplateBase implements TemplateDirectiveModel {
 
     
-
+    @Inject
+    private FeemarkerTemplateNameResolver templateNameResolver;
+    
     
     @Override
     public void execute(Environment env, Map args, TemplateModel[] arg2, TemplateDirectiveBody arg3)
@@ -32,7 +35,10 @@ public class IncludeFrameContentTemplateDirective extends IncludeTemplateBase im
 
         RequestContext rc = getDataModel("r.rc", RequestContext.class);
         
-        includeTemplate(rc,rc.getCurrentPriFullPath(),env);
+        String resourcePath = rc.getResourcePath();
+        String templateName = templateNameResolver.resolve(resourcePath);
+        
+        includeTemplate(rc,templateName,env);
     }
 
 }
