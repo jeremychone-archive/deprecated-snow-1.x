@@ -22,6 +22,7 @@ public class HttpServletRequestMock implements HttpServletRequest {
     private String pathInfo;
     private String contextPath = "";
     private Map    headers = new HashMap();
+    private Map    parameterMap = new HashMap();
     
     // --------- Additional Mock Methods --------- //
     public void setMethod(String method){
@@ -107,8 +108,7 @@ public class HttpServletRequestMock implements HttpServletRequest {
 
     @Override
     public Map getParameterMap() {
-        // TODO Auto-generated method stub
-        return null;
+        return parameterMap;
     }
 
     @Override

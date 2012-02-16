@@ -475,40 +475,22 @@ public class RequestContext {
     */
     // --------- /WebState Methods --------- //    
     
-    // --------- Resource Path Resolver --------- //
+    // --------- Paths --------- //
+    
     public String[] getResourcePaths(){
-        String[] currentPriPaths = null;
-        String resourcePath = getResourcePath();
-        String[] tmpPriPaths = resourcePath.split("/");
-        // remove the first element (always empty since the currentPri
-        // start starts with "/")
-        if (tmpPriPaths.length > 1) {
-            currentPriPaths = new String[tmpPriPaths.length - 1];
-            if (tmpPriPaths.length > 1) {
-                System.arraycopy(tmpPriPaths, 1, currentPriPaths, 0, currentPriPaths.length);
-            }
-        } else {
-            currentPriPaths = new String[0];
-        }
-        return currentPriPaths;        
+        return splitPath(getResourcePath());
     }
     
     public String getResourcePathAt(int i) {
-        String[] paths = getResourcePaths();
-        if (paths.length > i) {
-            return paths[i];
-        } else {
-            return null;
-        }
+        return pathAt(getResourcePaths(),i);
     }
 
     public <T> T getResourcePathAt(int i, Class<T> cls) {
-        return getResourcePathAt(i, cls, null);
+        return pathAt(getResourcePaths(),i, cls, null);
     }
 
     public <T> T getResourcePathAt(int i, Class<T> cls, T defaultValue) {
-        String valueStr = getResourcePathAt(i);
-        return ObjectUtil.getValue(valueStr, cls, defaultValue);
+        return pathAt(getResourcePaths(),i, cls, defaultValue);
     }
     
     public String getResourcePath() {
@@ -526,9 +508,39 @@ public class RequestContext {
     public void setFramePath(String framePath) {
         this.framePath = framePath;
     }
-    // --------- /Resource Path Resolver --------- //
+    // --------- /Paths --------- //
     
-
+    // TODO: probably does not need to be that complicated. Might want to use Guava here. 
+    static private String[] splitPath(String path){
+        String[] paths = null;
+        String[] tmpPaths = path.split("/");
+        // remove the first element (always empty since the currentPri
+        // start starts with "/")
+        if (tmpPaths.length > 1) {
+            paths = new String[tmpPaths.length - 1];
+            if (tmpPaths.length > 1) {
+                System.arraycopy(tmpPaths, 1, paths, 0, paths.length);
+            }
+        } else {
+            paths = new String[0];
+        }
+        return paths;         
+    }
+    
+    static private String pathAt(String[] paths,int i){
+        if (paths.length > i) {
+            return paths[i];
+        } else {
+            return null;
+        }
+    }
+    
+    public <T> T pathAt(String[] paths,int i, Class<T> cls, T defaultValue) {
+        String valueStr = pathAt(paths,i);
+        return ObjectUtil.getValue(valueStr, cls, defaultValue);
+    }
+    
+    
     /*--------- Writer ---------*/
     public void setWriter(Writer writer) {
         this.writer = writer;

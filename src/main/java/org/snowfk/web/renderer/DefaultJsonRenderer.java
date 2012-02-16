@@ -7,10 +7,9 @@ import net.sf.json.JSONSerializer;
 import net.sf.json.JsonConfig;
 import net.sf.json.util.CycleDetectionStrategy;
 
-public class DefaultJsonRenderer implements ModelRenderer {
+public class DefaultJsonRenderer{
     static private final String[] excludes = {"stackTrace"};
 
-    @Override
     public void render(Object data, Writer out) {
         String jsonString;
 

@@ -21,11 +21,11 @@ public class SnowWebApplicationTestSupport {
     
     /**
      * But be called by the TestUnit class from the @BeforClass method
-     * @param appFolder
+     * @param appFolderStr
      * @throws Exception
      */
-    public static void initWebApplication(String appFolder) throws Exception {
-        File sfkFolder = new File(appFolder);
+    public static void initWebApplication(String appFolderStr) throws Exception {
+        File sfkFolder = new File(appFolderStr);
         
         assertTrue("Snow Folder " + sfkFolder.getAbsolutePath() + " does not exist", sfkFolder.exists());
 
@@ -40,7 +40,7 @@ public class SnowWebApplicationTestSupport {
     @AfterClass
     public static void releaseWebApplicaton() throws Exception {
         ////not supported yet
-        //webApplication.destroy();
+        webController.destroy();
         application = null;
         webController = null;
         appLoader = null;

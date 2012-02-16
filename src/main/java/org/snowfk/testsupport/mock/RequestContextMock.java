@@ -5,6 +5,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 
+import org.snowfk.util.JsonUtil;
 import org.snowfk.web.RequestContext;
 
 public class RequestContextMock extends RequestContext {
@@ -35,6 +36,11 @@ public class RequestContextMock extends RequestContext {
     
     public String getResponseAsString(){
         return res.getResponseAsString();
+    }
+    
+    public Map getResponseAsJson(){
+        String response  = getResponseAsString();
+        return JsonUtil.toMapAndList(response);
     }
     
     public byte[] getResponseAsByArray(){

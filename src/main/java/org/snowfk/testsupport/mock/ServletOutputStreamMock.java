@@ -27,7 +27,8 @@ public class ServletOutputStreamMock extends ServletOutputStream {
 
     public String toString(){
         try {
-            return bout.toString("UTF-8");
+            String s =  bout.toString("UTF-8");
+            return s;
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

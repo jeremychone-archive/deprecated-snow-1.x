@@ -1,11 +1,27 @@
 package org.snowfk.web;
 
 
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Set;
+
+import org.snowfk.annotation.Nullable;
+import org.snowfk.web.method.WebActionHandler;
+import org.snowfk.web.method.WebExceptionHandler;
+import org.snowfk.web.method.WebFileHandler;
+import org.snowfk.web.method.WebModelHandler;
+import org.snowfk.web.method.WebTemplateDirectiveHandler;
 import org.snowfk.web.names.WebHandlerClasses;
+import org.snowfk.web.names.WebHandlers;
+
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provides;
 
 import com.metapossum.utils.scanner.reflect.ClassesInPackageScanner;
+import com.metapossum.utils.scanner.reflect.ExtendsClassResourceFilter;
 
 public class DefaultApplicationModule extends AbstractModule {
 
@@ -18,13 +34,65 @@ public class DefaultApplicationModule extends AbstractModule {
         
     }
 
+    @Provides
+    @WebHandlers
+    @Inject(optional=true)
+    @Nullable
+    public Object[] providesWebHandlers(Injector injector, @WebHandlerClasses Class[] webHandlerClasses){
+        
+        if (webHandlerClasses != null){
+            Object[] webHandlers = new Object[webHandlerClasses.length];
+            int i = 0; 
+            for (Class cls : webHandlerClasses){
+                
+
+                Object webHandler = injector.getInstance(cls);
+                webHandlers[i] = webHandler;
+                i++;
+            }
+            return webHandlers;
+        }
+        
+        return null;
+    }
     
     @Provides
     @WebHandlerClasses
     public Class[] providesWebHandlerClasses(){
         
+        ClassesInPackageScanner classScanner = new ClassesInPackageScanner();
+        
+        classScanner.setResourceFilter(new ExtendsClassResourceFilter(Object.class, true){
+            @Override
+            public boolean acceptScannedResource(Class cls) {
+                for (Method method : cls.getDeclaredMethods()) {
+                    
+                    if (method.getAnnotation(WebActionHandler.class) != null || method.getAnnotation(WebFileHandler.class) != null
+                                            || method.getAnnotation(WebModelHandler.class) != null
+                                            || method.getAnnotation(WebTemplateDirectiveHandler.class) != null
+                                            || method.getAnnotation(WebExceptionHandler.class) != null) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+        
+        
+        String baseApplicationPackage = "org.snowfk.test.app.simpleapp";
+        try {
+            Set classSet = classScanner.findSubclasses(baseApplicationPackage, Object.class);
+            Class[] webHandlerClasses = new Class[classSet.size()];
+            classSet.toArray(webHandlerClasses);   
+            return webHandlerClasses;
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new RuntimeException("Failed to scan packages: " + baseApplicationPackage); 
+        }
+        
     }
-    
+    /*
     
     private Class[] scanForWebHandlerClasses(WebModuleConfig webModuleConfig) {
         Class[] webHandlerClasses = scanForClasses(webModuleConfig.getClass(), new ClassesInPackageScanner.AcceptanceTest() {
@@ -60,5 +128,6 @@ public class DefaultApplicationModule extends AbstractModule {
         return classes.toArray(new Class[classes.size()]);
 
     }
+    */
     /*--------- /Privates ---------*/
 }

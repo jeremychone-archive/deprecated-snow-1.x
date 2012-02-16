@@ -32,6 +32,10 @@ import com.google.inject.name.Named;
 @Singleton
 public class WebController {
     static private Logger                 logger                        = LoggerFactory.getLogger(WebController.class);
+    
+    public enum ResponseType{
+        template,json,other;
+    }
 
     private static final String           CHAR_ENCODING                 = "UTF-8";
     private static final String           MODEL_KEY_REQUEST             = "r";
@@ -126,7 +130,23 @@ public class WebController {
         requestContextTl.set(rc);
         
         HttpServletRequest request = rc.getReq();
+        ResponseType responseType = null;
         
+        String resourcePath = resourcePathResolver.resolve(rc);
+                
+        
+        if (isTemplatePath(resourcePath)) {
+            String framePath = framePathResolver.resolve(rc);
+            rc.setFramePath(framePath);
+            rc.setResourcePath(fixTemplateAndJsonResourcePath(resourcePath));
+            responseType = ResponseType.template;
+        } else if (isJsonPath(resourcePath)) {
+            rc.setResourcePath(fixTemplateAndJsonResourcePath(resourcePath));
+            responseType = ResponseType.json;
+        } else {
+            responseType = ResponseType.other;
+            rc.setResourcePath(resourcePath);
+        }        
         
         try {
             // --------- Open HibernateSession --------- //
@@ -174,18 +194,17 @@ public class WebController {
                 // --------- /afterActionProcessing --------- //
             }
             // --------- /Processing the Post (if any) --------- //
-
-            String resourcePath = resourcePathResolver.resolve(rc);
-            rc.setResourcePath(resourcePath);
-
-            if (isTemplatePath(resourcePath)) {
-                String framePath = framePathResolver.resolve(rc);
-                rc.setFramePath(framePath);
-                serviceTemplate(rc);
-            } else if (isJsonPath(resourcePath)) {
-                serviceJson(rc);
-            } else {
-                serviceFallback(rc);
+            
+            switch(responseType){
+                case template: 
+                    serviceTemplate(rc);
+                    break;
+                case json:
+                    serviceJson(rc);
+                    break;
+                case other:
+                    serviceFallback(rc);
+                    break;
             }
 
             // this catch is for when this exception is thrown prior to entering the web handler method.
@@ -333,21 +352,33 @@ public class WebController {
         }
     }
 
+    
+    /*
+     * First the resourcePath by remove extension (.json or .ftl) and adding index if the path end with "/"
+     */
+    static private String fixTemplateAndJsonResourcePath(String resourcePath){
+        String path = FileUtil.getFileNameAndExtension(resourcePath)[0];
+        if (path.endsWith("/")){
+            path += "index";
+        }
+        return path;
+    }
+    
     static Set cachableExtension = MapUtil.setIt(".css", ".js", ".png", ".gif", ".jpeg");
 
     /**
      * Return true if the content pointed by the pathInfo is static.<br>
      * Right now, just return true if there is no extension
      * 
-     * @param pathInfo
+     * @param path
      * @return
      */
-    static private final boolean isTemplatePath(String pathInfo) {
-        int idx = pathInfo.lastIndexOf('.');
-        if (idx != -1) {
-            return false;
-        } else {
+    static private final boolean isTemplatePath(String path) {
+        
+        if (path.lastIndexOf('.') == -1 || path.endsWith(".ftl")){
             return true;
+        }else{
+            return false;
         }
     }
 

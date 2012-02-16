@@ -12,8 +12,16 @@ import javax.servlet.http.HttpServletResponse;
 
 public class HttpServletResponseMock implements HttpServletResponse {
 
-    @Inject
+    // will be inject in constructor
     private ServletOutputStreamMock outputStream;
+    // will be built from outputStream in constructor
+    private PrintWriter writer;
+    
+    @Inject
+    public HttpServletResponseMock(ServletOutputStreamMock outputStream){
+        this.outputStream = outputStream;
+        this.writer = new PrintWriter(outputStream);
+    }
     
     // --------- Mock Methods --------- //
     public String getResponseAsString(){
@@ -58,14 +66,12 @@ public class HttpServletResponseMock implements HttpServletResponse {
 
     @Override
     public ServletOutputStream getOutputStream() throws IOException {
-        // TODO Auto-generated method stub
         return outputStream;
     }
 
     @Override
     public PrintWriter getWriter() throws IOException {
-        // TODO Auto-generated method stub
-        return new PrintWriter(outputStream);
+        return writer;
     }
 
     @Override

@@ -42,7 +42,7 @@ public class Application {
         NO_WEB_ACTION
     }
     
-    static final String                                             PATH_ACTION_RESPONSE_JSON  = "/_actionResponse.json";
+    static final String                                             PATH_ACTION_RESPONSE_JSON  = "/_actionResponse";
 
     // just to make sure we initialize only onces
     private boolean                                                 initialized                = false;
@@ -103,9 +103,10 @@ public class Application {
             }
 
             // register the webhandlers
+            
             if (webHandlers != null) {
-                for (Object activeBean : webHandlers) {
-                    registerWebHandlerMethods(activeBean);
+                for (Object webHandler : webHandlers) {
+                    registerWebHandlerMethods(webHandler);
                 }
             }
 
@@ -139,6 +140,7 @@ public class Application {
         Map rootModel = rc.getRootModel();
 
         Map m = rc.getWebMap();
+        
         processWebModels(m,rc);
         
         String path = rc.getFramePath();
@@ -171,9 +173,8 @@ public class Application {
             if (data == null) {
                 data = m;
             }
-
-            jsonRenderer.render(data, rc.getWriter());
         }
+        jsonRenderer.render(data, rc.getWriter());
     }
 
 
@@ -222,9 +223,9 @@ public class Application {
         
         
         StringBuilder pathBuilder = new StringBuilder();
-        String[] priPaths = rc.getResourcePaths();
-        for (int i = 0; i < priPaths.length; i++) {
-            String path = pathBuilder.append('/').append(priPaths[i]).toString();
+        String[] resourcePaths = rc.getResourcePaths();
+        for (int i = 0; i < resourcePaths.length; i++) {
+            String path = pathBuilder.append('/').append(resourcePaths[i]).toString();
             WebModelHandlerRef webModelRef = getWebModelRef(path);
             invokeWebModelRef(webModelRef, m, rc);
         }        
