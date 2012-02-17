@@ -86,8 +86,7 @@ public class WebBundleDirective implements TemplateDirectiveModel {
         
         //Part part = webApplication.getPart(path);
         //File folder = part.getResourceFile();
-        String resourcePath = rc.getResourcePath();
-        File folder = pathFileResolver.resolve(resourcePath).getParentFile();
+        File folder = pathFileResolver.resolve(path);
         
         if (!folder.exists()){
             throw new SnowRuntimeException(Alert.NOT_VALID_WEBBUNDLE_PATH,"path",folder.getAbsolutePath());
@@ -96,6 +95,7 @@ public class WebBundleDirective implements TemplateDirectiveModel {
         StringBuilder sb = new StringBuilder();
         
         //if debug mode, include all the files
+        
         if (debug_links){
             List<File> files = webBundleManager.getWebBundleFiles(folder, fileExt);
             for (File file : files){

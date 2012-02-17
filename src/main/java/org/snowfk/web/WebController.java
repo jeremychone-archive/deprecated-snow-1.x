@@ -358,9 +358,6 @@ public class WebController {
      */
     static private String fixTemplateAndJsonResourcePath(String resourcePath){
         String path = FileUtil.getFileNameAndExtension(resourcePath)[0];
-        if (path.endsWith("/")){
-            path += "index";
-        }
         return path;
     }
     

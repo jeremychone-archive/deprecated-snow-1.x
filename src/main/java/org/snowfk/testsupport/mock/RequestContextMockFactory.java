@@ -4,14 +4,14 @@ package org.snowfk.testsupport.mock;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class MockFactory {
+public class RequestContextMockFactory {
 
     public enum RequestMethod{
         POST, GET
     }
     private Injector injector;
     
-    public MockFactory init(){
+    public RequestContextMockFactory init(){
         injector = Guice.createInjector(new MockFactoryModule());
         return this;
     }

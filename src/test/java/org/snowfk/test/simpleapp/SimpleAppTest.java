@@ -1,6 +1,7 @@
 package org.snowfk.test.simpleapp;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Map;
@@ -8,8 +9,7 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.snowfk.testsupport.SnowWebApplicationTestSupport;
-import org.snowfk.testsupport.mock.MockFactory;
-import org.snowfk.testsupport.mock.MockFactory.RequestMethod;
+import org.snowfk.testsupport.mock.RequestContextMockFactory.RequestMethod;
 import org.snowfk.testsupport.mock.RequestContextMock;
 import org.snowfk.util.MapUtil;
 
@@ -21,11 +21,9 @@ public class SimpleAppTest extends SnowWebApplicationTestSupport {
     }
 
     @Test
-    public void testHelloPage() {
-        try {
+    public void testHelloPage() throws Exception {
 
-            MockFactory mockFactory = new MockFactory().init();
-            RequestContextMock rc = mockFactory.createRequestContext(RequestMethod.GET, "/helloPage");
+            RequestContextMock rc = requestContextFactory.createRequestContext(RequestMethod.GET, "/helloPage");
             Map<String, Object> paramMap = (Map<String, Object>) MapUtil.mapIt("name", "John");
             rc.setParamMap(paramMap);
 
@@ -34,38 +32,28 @@ public class SimpleAppTest extends SnowWebApplicationTestSupport {
             String result = rc.getResponseAsString();
 
             assertEquals("---Hello John---", result);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
     }
 
     @Test
-    public void testContactJson() {
-        try {
+    public void testContactJson() throws Exception {
             Map result;
             RequestContextMock rc;
-            MockFactory mockFactory = new MockFactory().init();
 
             // test getting contact id = 1 (Mike)
-            rc = mockFactory.createRequestContext(RequestMethod.GET, "/contact.json");
+            rc = requestContextFactory.createRequestContext(RequestMethod.GET, "/contact.json");
             rc.setParamMap(MapUtil.mapIt("id", "1"));
             webController.service(rc);
             result = rc.getResponseAsJson();
             assertEquals("Mike",MapUtil.getNestedValue(result, "contact.name"));
 
             // test getting contact id = 2 (Dylan)
-            rc = mockFactory.createRequestContext(RequestMethod.GET, "/contact.json");
+            rc = requestContextFactory.createRequestContext(RequestMethod.GET, "/contact.json");
             rc.setParamMap(MapUtil.mapIt("id", "2"));
             webController.service(rc);
             result = rc.getResponseAsJson();
             assertEquals("Dylan",MapUtil.getNestedValue(result, "contact.name"));
 
-        } catch (Throwable e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+ 
     }
 
     @Test
@@ -73,17 +61,16 @@ public class SimpleAppTest extends SnowWebApplicationTestSupport {
         try {
             String result;
             RequestContextMock rc;
-            MockFactory mockFactory = new MockFactory().init();
             
             // test with the /contact path
-            rc = mockFactory.createRequestContext(RequestMethod.GET, "/contact");
+            rc = requestContextFactory.createRequestContext(RequestMethod.GET, "/contact");
             rc.setParamMap(MapUtil.mapIt("id", "1"));
             webController.service(rc);
             result = rc.getResponseAsString();
             assertEquals("---Hello Mike---", result);
             
             // test with the /contact.ftl path 
-            rc = mockFactory.createRequestContext(RequestMethod.GET, "/contact.ftl");
+            rc = requestContextFactory.createRequestContext(RequestMethod.GET, "/contact.ftl");
             rc.setParamMap(MapUtil.mapIt("id", "1"));
             webController.service(rc);
             result = rc.getResponseAsString();
@@ -97,34 +84,24 @@ public class SimpleAppTest extends SnowWebApplicationTestSupport {
     }
     
     @Test
-    public void testNotesIndexPage() {
-        try {
+    public void testNotesIndexPage() throws Exception {
             String result;
             RequestContextMock rc;
-            MockFactory mockFactory = new MockFactory().init();
             
             // test with the /contact path
-            rc = mockFactory.createRequestContext(RequestMethod.GET, "notes/");
+            rc = requestContextFactory.createRequestContext(RequestMethod.GET, "notes/");
             webController.service(rc);
             result = rc.getResponseAsString();
             assertEquals("---This is the notes/index.ftl page---",result);
-
-        } catch (Throwable e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-
     }   
     
     @Test
-    public void testAddContactAction() {
-        try {
+    public void testAddContactAction() throws Exception {
             Map result;
             RequestContextMock rc;
-            MockFactory mockFactory = new MockFactory().init();
             
             // test add contact
-            rc = mockFactory.createRequestContext(RequestMethod.POST, "/_actionResponse.json");
+            rc = requestContextFactory.createRequestContext(RequestMethod.POST, "/_actionResponse.json");
             rc.setParamMap(MapUtil.mapIt("action","addContact","name", "Jennifer"));
             webController.service(rc);
             result = rc.getResponseAsJson();
@@ -132,18 +109,35 @@ public class SimpleAppTest extends SnowWebApplicationTestSupport {
 
             
             String newContactId = MapUtil.getNestedValue(result, "result.id");
-            rc = mockFactory.createRequestContext(RequestMethod.GET, "/contact.json");
+            rc = requestContextFactory.createRequestContext(RequestMethod.GET, "/contact.json");
             rc.setParamMap(MapUtil.mapIt("id",newContactId));
             webController.service(rc);
             result = rc.getResponseAsJson();
             assertEquals("Jennifer",MapUtil.getNestedValue(result, "contact.name"));
-            
 
-        } catch (Throwable e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
 
-    }      
+    }    
+    
+    @Test
+    public void testWebBundle() throws Exception{
+        String result;
+        RequestContextMock rc;
+        
+        // test with the contact list
+        rc = requestContextFactory.createRequestContext(RequestMethod.POST, "/webBundleTest");
+        webController.service(rc);
+        result = rc.getResponseAsString();
+        String shouldContain = "<script type='text/javascript' src='/js/_web_bundle_all__";
+        assertTrue("Should contain:\n" + shouldContain + " but was:\n" + result,result.contains(shouldContain) );
+        
+        // test with _debug_links
+        rc = requestContextFactory.createRequestContext(RequestMethod.POST, "/webBundleTest");
+        rc.setParamMap(MapUtil.mapIt("_debug_links","true"));
+        webController.service(rc);
+        result = rc.getResponseAsString();
+        
+        assertTrue("Should contain: 'js1.js' and 'js2.js' but was:\n" + result,result.contains("js1.js") && result.contains("js2.js")  );
+        
+    }
 
 }

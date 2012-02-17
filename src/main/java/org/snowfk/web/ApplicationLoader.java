@@ -24,13 +24,10 @@ import com.google.inject.util.Modules;
 public class ApplicationLoader {
     static private Logger logger = LoggerFactory.getLogger(ApplicationLoader.class);
 
-    Injector              appInjector;
+    protected Injector              appInjector;
     //File                  sfkFolder;
-    ServletContext        servletContext;
-
-    File                  webAppFolder; 
-    
-    WebController         webController;
+    private ServletContext        servletContext;
+    private File                  webAppFolder; 
 
     PropertyPostProcessor propertyPostProcessor;
 
@@ -125,20 +122,27 @@ public class ApplicationLoader {
         rootModules.add(new RootWebModule(servletContext));
         rootModules.add(new RootApplicationModule(appProperties, getWebAppFolder(), appDir));
 
+        
+        String applicationConfigClassStr = appProperties.getProperty("snow.applicationWebModuleConfigClass");
+        Class applicationModuleClass = null;
+        String applicationPackageBase = null;
+        if (applicationConfigClassStr != null){
+            applicationModuleClass = Class.forName(applicationConfigClassStr);
+            applicationPackageBase = applicationModuleClass.getPackage().getName();
+        }
         // build the default modules
         // default modules can be overrided
         List<Module> defaultModules = new ArrayList<Module>();
-        defaultModules.add(new DefaultApplicationModule());
+        defaultModules.add(new DefaultApplicationModule(applicationPackageBase));
 
         boolean hasHibernate = (appProperties != null && MapUtil.hasKeyStartsWith(appProperties, "hibernate."));
         if (hasHibernate) {
             defaultModules.add(new DefaultHibernateModule());
         }
 
-        String applicationConfigClassStr = appProperties.getProperty("snow.applicationWebModuleConfigClass");
+        
         Module combineAppModule;
-        if (applicationConfigClassStr != null) {
-            Class applicationModuleClass = Class.forName(applicationConfigClassStr);
+        if (applicationModuleClass != null) {
             Module applicationModule = (Module) applicationModuleClass.newInstance();
             combineAppModule = Modules.override(defaultModules).with(applicationModule);
         } else {
@@ -156,10 +160,6 @@ public class ApplicationLoader {
     
     public WebController getWebController(){
         return appInjector.getInstance(WebController.class);
-    }
-    
-    public Application getApplication(){
-        return appInjector.getInstance(Application.class);
     }
     
     // --------- PropertyPostProcessor Methods --------- //

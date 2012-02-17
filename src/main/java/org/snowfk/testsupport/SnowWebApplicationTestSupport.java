@@ -7,16 +7,23 @@ import java.io.File;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.snowfk.testsupport.mock.ApplicationLoaderMock;
+import org.snowfk.testsupport.mock.RequestContextMockFactory;
 import org.snowfk.web.Application;
 import org.snowfk.web.ApplicationLoader;
 import org.snowfk.web.WebController;
 
+import com.google.inject.Injector;
+
 public class SnowWebApplicationTestSupport {
     protected static String       SNOW_FOLDER_SAMPLE1_PATH = "TOOVERRIDE";
 
-    protected static ApplicationLoader appLoader;
-    protected static Application application;
+    protected static ApplicationLoaderMock appLoader;
+    protected static Injector appInjector; 
     protected static WebController webController;
+    
+    
+    protected static RequestContextMockFactory requestContextFactory;
     
     
     /**
@@ -29,45 +36,29 @@ public class SnowWebApplicationTestSupport {
         
         assertTrue("Snow Folder " + sfkFolder.getAbsolutePath() + " does not exist", sfkFolder.exists());
 
-        appLoader = new ApplicationLoader(sfkFolder, null).load();
-        application = appLoader.getApplication();
+        // load thie application
+        appLoader = new ApplicationLoaderMock(sfkFolder, null).load();
+        
+        // init the application
         webController = appLoader.getWebController();
         webController.init();
 
-        //hibernateHandler = appLoader.getHibernateHandler();
+        // for convenience get the appInjector
+        appInjector = appLoader.getApplicationInjector();
+        
+        // for convenience create a RequestContextMockFactory
+        requestContextFactory = new RequestContextMockFactory().init();
     }
 
     @AfterClass
     public static void releaseWebApplicaton() throws Exception {
         ////not supported yet
         webController.destroy();
-        application = null;
+        appInjector = null;
         webController = null;
         appLoader = null;
     }
 
-    @Before
-    public void emulateRequestStart() {
-        if (appLoader != null) {
-            /*
-            HibernateHandler hibernateHandler = appLoader.getHibernateHandler();
-            if (hibernateHandler != null) {
-                hibernateHandler.openSessionInView();
-            }
-            */
-        }
-    }
 
-    @After
-    public void emulateRequestEnd() {
-        if (appLoader != null) {
-            /*
-            HibernateHandler hibernateHandler = appLoader.getHibernateHandler();
-            if (hibernateHandler != null) {
-                hibernateHandler.closeSessionInView();
-            }
-            */
-        }
-    }
 
 }

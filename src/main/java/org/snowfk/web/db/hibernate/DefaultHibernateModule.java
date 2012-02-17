@@ -1,6 +1,5 @@
 package org.snowfk.web.db.hibernate;
 
-
 import com.google.inject.AbstractModule;
 
 
@@ -29,5 +28,6 @@ public class DefaultHibernateModule extends AbstractModule{
         
         bind(HibernateSessionInViewHandler.class).to(DefaultHibernateSessionInViewHandler.class);
     }
+    
 
 }

@@ -19,6 +19,9 @@ public class FeemarkerTemplateNameResolver {
     
     // resourcePath needs to be relative to WebAppFolder
     public String resolve(String resourcePath){
+        if (resourcePath.endsWith("/")){
+            resourcePath += "index";
+        }
         File resourceFile = new File(webAppFolder,resourcePath + ".ftl");
         
         return getTemplateName(resourceFile);
